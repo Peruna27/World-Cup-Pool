@@ -217,6 +217,14 @@
         .owner-card { border-bottom: 1px solid var(--border-light); }
         .owner-card:last-child { border-bottom: none; }
 
+        /* Thicker visual separator between owners on Pool Standings only */
+        #pool-standings .owner-card {
+            border-bottom: 5px solid var(--cream-dark);
+        }
+        #pool-standings .owner-card:last-child {
+            border-bottom: none;
+        }
+
         .owner-header {
             display: flex;
             align-items: center;
@@ -410,7 +418,7 @@
         .fixture-row:last-child { border-bottom: none; }
 
         .fixture-status {
-            width: 56px;
+            width: 64px;
             text-align: center;
             font-family: 'DM Sans', sans-serif;
             font-size: 10px;
@@ -420,6 +428,25 @@
             flex-shrink: 0;
         }
         .fixture-status.live { color: var(--score-red); font-weight: 700; }
+        .fixture-venue {
+            font-size: 9px;
+            font-style: italic;
+            color: var(--text-light);
+            margin-top: 2px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Eliminated team styling — grey + strikethrough */
+        .team-eliminated { opacity: 0.4; }
+        .team-eliminated .fixture-team-name,
+        .team-eliminated .group-team-name,
+        .team-eliminated .roster-name {
+            text-decoration: line-through;
+            text-decoration-color: rgba(192,57,43,0.5);
+        }
 
         .fixture-teams {
             flex: 1;
@@ -579,13 +606,26 @@
             margin: 4px 0;
             background: #fff;
             cursor: pointer;
+            position: relative;
         }
         .bracket-match:active { background: var(--cream-light); }
+        .bracket-match-num {
+            position: absolute;
+            top: -7px;
+            left: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 8px;
+            font-weight: 700;
+            color: var(--text-light);
+            background: #fff;
+            padding: 0 4px;
+            letter-spacing: 0.5px;
+        }
         .bracket-match-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 5px 8px;
+            padding: 6px 8px;
             font-family: 'Source Serif 4', serif;
             font-weight: 700;
             font-size: 11px;
@@ -594,7 +634,7 @@
         .bracket-match-row + .bracket-match-row {
             border-top: 1px solid var(--border-light);
         }
-        .bracket-match-row.tbd { color: var(--text-light); font-style: italic; }
+        .bracket-match-row.tbd { color: var(--text-light); font-style: italic; font-size: 10px; }
 
         /* ── Top scorers (Goals view) ── */
         .scorer-row {
@@ -967,15 +1007,99 @@
             return null;
         }
 
+        // ── OFFICIAL 2026 DRAW (Dec 5, 2025) ──
+        const GROUPS = {
+            A: ['Mexico', 'South Africa', 'South Korea', 'Czech Republic'],
+            B: ['Canada', 'Bosnia and Herzegovina', 'Qatar', 'Switzerland'],
+            C: ['Brazil', 'Morocco', 'Haiti', 'Scotland'],
+            D: ['United States', 'Paraguay', 'Australia', 'Turkey'],
+            E: ['Germany', 'Curaçao', 'Ivory Coast', 'Ecuador'],
+            F: ['Netherlands', 'Japan', 'Sweden', 'Tunisia'],
+            G: ['Belgium', 'Egypt', 'Iran', 'New Zealand'],
+            H: ['Spain', 'Cape Verde', 'Saudi Arabia', 'Uruguay'],
+            I: ['France', 'Senegal', 'Iraq', 'Norway'],
+            J: ['Argentina', 'Algeria', 'Austria', 'Jordan'],
+            K: ['Portugal', 'DR Congo', 'Uzbekistan', 'Colombia'],
+            L: ['England', 'Croatia', 'Ghana', 'Panama']
+        };
+
+        // ── BRACKET (R32 → Final, per FIFA 2026 published structure) ──
+        const BRACKET_R32 = [
+            { m: 73, home: '2A', away: '2B' },
+            { m: 74, home: '1E', away: '3(A/B/C/D/F)' },
+            { m: 75, home: '1F', away: '2C' },
+            { m: 76, home: '1C', away: '2F' },
+            { m: 77, home: '1I', away: '3(C/D/F/G/H)' },
+            { m: 78, home: '2E', away: '2I' },
+            { m: 79, home: '1A', away: '3(C/E/F/H/I)' },
+            { m: 80, home: '1L', away: '3(E/H/I/J/K)' },
+            { m: 81, home: '1D', away: '3(B/E/F/I/J)' },
+            { m: 82, home: '1G', away: '3(A/E/H/I/J)' },
+            { m: 83, home: '2K', away: '2L' },
+            { m: 84, home: '1H', away: '2J' },
+            { m: 85, home: '1B', away: '3(E/F/G/I/J)' },
+            { m: 86, home: '1J', away: '2H' },
+            { m: 87, home: '1K', away: '3(D/E/I/J/L)' },
+            { m: 88, home: '2D', away: '2G' }
+        ];
+        const BRACKET_R16 = [
+            { m: 89, from: [74, 77] },
+            { m: 90, from: [73, 75] },
+            { m: 91, from: [76, 78] },
+            { m: 92, from: [79, 80] },
+            { m: 93, from: [83, 84] },
+            { m: 94, from: [81, 82] },
+            { m: 95, from: [86, 88] },
+            { m: 96, from: [85, 87] }
+        ];
+        const BRACKET_QF = [
+            { m: 97, from: [89, 90] },
+            { m: 98, from: [91, 92] },
+            { m: 99, from: [93, 94] },
+            { m: 100, from: [95, 96] }
+        ];
+        const BRACKET_SF = [
+            { m: 101, from: [97, 98] },
+            { m: 102, from: [99, 100] }
+        ];
+        const BRACKET_FINAL = { m: 104, from: [101, 102] };
+        const BRACKET_THIRD = { m: 103, from: [101, 102] };  // losers
+
         // ── STATE ──
+        const TZ = 'America/Chicago';   // Display all dates in Central time
         let teamOdds = {};
         let playerOdds = {};    // playerNameLower -> top-scorer probability
         let fixtures = [];
         let goalScorers = {};
+        let eliminatedTeams = new Set();  // normalized team names that are out of the tournament
         let openOwners = new Set(['Joe','Mike','Reed','Will','boot-Joe','boot-Mike','boot-Reed','boot-Will']);
         const CACHE_KEY_ESPN = 'wcp_espn_2026';
         const CACHE_KEY_POLY = 'wcp_poly_2026';
         const CACHE_KEY_BOOT = 'wcp_boot_2026';
+
+        // ── CT TIMEZONE HELPERS ──
+        function fmtDateCT(iso, opts) {
+            if (!iso) return 'TBD';
+            return new Date(iso).toLocaleDateString('en-US', Object.assign({ timeZone: TZ }, opts || { weekday: 'short', month: 'short', day: 'numeric' }));
+        }
+        function fmtTimeCT(iso) {
+            if (!iso) return '';
+            return new Date(iso).toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
+        }
+        function fmtDateTimeCT(iso) {
+            if (!iso) return 'TBD';
+            return new Date(iso).toLocaleString('en-US', { timeZone: TZ, dateStyle: 'medium', timeStyle: 'short' }) + ' CT';
+        }
+        function ctDateKey(iso) {
+            // YYYY-MM-DD in Central time, for grouping
+            if (!iso) return 'TBD';
+            const d = new Date(iso);
+            const parts = new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d);
+            const y = parts.find(p => p.type === 'year').value;
+            const m = parts.find(p => p.type === 'month').value;
+            const day = parts.find(p => p.type === 'day').value;
+            return y + '-' + m + '-' + day;
+        }
 
         function fmtPct(p) {
             if (p == null || isNaN(p)) return '--';
@@ -1131,6 +1255,39 @@
             return 0;
         }
 
+        // ── ELIMINATED TEAMS ──
+        function isKnockoutMatch(f) {
+            for (const n of (f.notes || [])) {
+                const t = (n.headline || n.type || '').toLowerCase();
+                if (t.includes('round of') || t.includes('quarter') || t.includes('semi')
+                    || (t.includes('final') && !t.includes('group'))) return true;
+            }
+            return false;
+        }
+        function computeEliminated() {
+            const out = new Set();
+            // 1. Knockout losers — they're out, period
+            for (const f of fixtures) {
+                if (f.statusState !== 'post' || !isKnockoutMatch(f)) continue;
+                const hs = parseInt(f.homeScore) || 0;
+                const as = parseInt(f.awayScore) || 0;
+                if (hs > as) out.add(normalizeTeam(f.awayName));
+                else if (as > hs) out.add(normalizeTeam(f.homeName));
+                // ESPN status detail will indicate winner via pen shootout if tied
+            }
+            // 2. Bottom of group once all 3 group games are played AND no longer at risk
+            //    Conservative version: only mark 4th place if all 6 group games are done
+            const groups = deriveGroups();
+            for (const g of groups) {
+                const fullyPlayed = g.teams.every(t => t.gp >= 3);
+                if (!fullyPlayed) continue;
+                // 4th place: always out
+                if (g.teams[3]) out.add(normalizeTeam(g.teams[3].name));
+                // 3rd place: TBD until best-3rds are decided across all groups, so leave alone
+            }
+            return out;
+        }
+
         // ── ODDS CALC ──
         function teamProb(teamName) {
             return teamOdds[normalizeTeam(teamName)] || 0;
@@ -1175,8 +1332,9 @@
                     const prob = t.isField ? fieldProb() : teamProb(t.name);
                     const onclick = t.isField ? '' : `onclick='showTeam(${JSON.stringify(t.name)}); event.stopPropagation();'`;
                     const fieldCls = t.isField ? 'field-bucket' : '';
+                    const out = !t.isField && eliminatedTeams.has(normalizeTeam(t.name)) ? 'team-eliminated' : '';
                     return `
-                        <div class="roster-row ${fieldCls}" ${onclick}>
+                        <div class="roster-row ${fieldCls} ${out}" ${onclick}>
                             <div class="roster-flag">${t.flag || '⚽'}</div>
                             <div class="roster-name">${t.name}${t.isField ? ' (31 teams)' : ''}</div>
                             <div class="roster-cost">${fmtMoney(t.cost)}</div>
@@ -1295,31 +1453,36 @@
             }
             const byDate = {};
             for (const f of fixtures) {
-                const d = f.date ? f.date.slice(0,10) : 'TBD';
+                const d = ctDateKey(f.date);
                 if (!byDate[d]) byDate[d] = [];
                 byDate[d].push(f);
             }
             const dates = Object.keys(byDate).sort();
             el.innerHTML = dates.map(d => {
-                const dateLabel = d === 'TBD' ? 'TBD' : new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                const dateLabel = d === 'TBD' ? 'TBD' :
+                    fmtDateCT(d + 'T18:00:00Z', { weekday: 'short', month: 'short', day: 'numeric' });
                 const rows = byDate[d].map(f => {
                     const isLive = f.statusState === 'in';
                     const isPost = f.statusState === 'post';
                     let status = f.statusDetail || '';
-                    if (!isPost && !isLive && f.date) {
-                        const dt = new Date(f.date);
-                        status = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                    }
+                    if (!isPost && !isLive && f.date) status = fmtTimeCT(f.date);
                     const showScore = isPost || isLive;
+                    // Shorter venue label for the row (city if available, otherwise full)
+                    const venueShort = (f.venue || '').split(',')[0].replace(/\s*Stadium.*$/i, '').replace(/MetLife.*/, 'MetLife').trim();
+                    const homeOut = eliminatedTeams.has(normalizeTeam(f.homeName)) ? 'team-eliminated' : '';
+                    const awayOut = eliminatedTeams.has(normalizeTeam(f.awayName)) ? 'team-eliminated' : '';
                     return `
                         <div class="fixture-row" onclick='showMatch(${JSON.stringify(f.id)})'>
-                            <div class="fixture-status ${isLive ? 'live' : ''}">${status || '&nbsp;'}</div>
+                            <div class="fixture-status ${isLive ? 'live' : ''}">
+                                <div>${status || '&nbsp;'}</div>
+                                ${venueShort ? `<div class="fixture-venue">${venueShort}</div>` : ''}
+                            </div>
                             <div class="fixture-teams">
-                                <div class="fixture-team-row">
+                                <div class="fixture-team-row ${homeOut}">
                                     <span class="fixture-team-name" onclick='showTeam(${JSON.stringify(f.homeName)}); event.stopPropagation();'>${f.homeName}</span>
                                     ${teamTagHtml(f.homeName)}
                                 </div>
-                                <div class="fixture-team-row">
+                                <div class="fixture-team-row ${awayOut}">
                                     <span class="fixture-team-name" onclick='showTeam(${JSON.stringify(f.awayName)}); event.stopPropagation();'>${f.awayName}</span>
                                     ${teamTagHtml(f.awayName)}
                                 </div>
@@ -1335,59 +1498,51 @@
             }).join('');
         }
 
-        // ── RENDER: GROUPS (derived from fixtures since ESPN standings endpoint shape varies) ──
+        // ── RENDER: GROUPS (hardcoded from official draw, tallied from fixture results) ──
         function deriveGroups() {
-            // Group letter is sometimes in event.notes; fall back to TBD groups
-            const groupMap = {};
-            for (const f of fixtures) {
-                let groupLetter = null;
-                for (const n of (f.notes || [])) {
-                    const m = (n.headline || n.type || '').match(/Group\s+([A-L])/i);
-                    if (m) { groupLetter = m[1].toUpperCase(); break; }
-                }
-                if (!groupLetter) continue;
-                if (!groupMap[groupLetter]) groupMap[groupLetter] = {};
-                for (const teamName of [f.homeName, f.awayName]) {
-                    if (!groupMap[groupLetter][teamName]) {
-                        groupMap[groupLetter][teamName] = { name: teamName, gp:0, w:0, d:0, l:0, gf:0, ga:0, pts:0 };
-                    }
-                }
-                // Tally only if game played
-                if (f.statusState === 'post') {
-                    const hs = parseInt(f.homeScore) || 0;
-                    const as = parseInt(f.awayScore) || 0;
-                    const home = groupMap[groupLetter][f.homeName];
-                    const away = groupMap[groupLetter][f.awayName];
-                    home.gp++; away.gp++;
-                    home.gf += hs; home.ga += as;
-                    away.gf += as; away.ga += hs;
-                    if (hs > as) { home.w++; home.pts += 3; away.l++; }
-                    else if (hs < as) { away.w++; away.pts += 3; home.l++; }
-                    else { home.d++; home.pts++; away.d++; away.pts++; }
-                }
+            // Build a quick lookup of each team's row, starting from the official draw
+            const groups = Object.entries(GROUPS).map(([letter, teams]) => ({
+                letter,
+                teams: teams.map(name => ({ name, gp:0, w:0, d:0, l:0, gf:0, ga:0, pts:0 }))
+            }));
+            const teamRowByNorm = {};
+            for (const g of groups) {
+                for (const t of g.teams) teamRowByNorm[normalizeTeam(t.name)] = t;
             }
-            return Object.entries(groupMap).sort((a,b) => a[0].localeCompare(b[0])).map(([letter, teams]) => {
-                const arr = Object.values(teams);
-                arr.forEach(t => t.gd = t.gf - t.ga);
-                arr.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
-                return { letter, teams: arr };
-            });
+            // Tally completed fixtures
+            for (const f of fixtures) {
+                if (f.statusState !== 'post') continue;
+                const home = teamRowByNorm[normalizeTeam(f.homeName)];
+                const away = teamRowByNorm[normalizeTeam(f.awayName)];
+                if (!home || !away) continue;  // not a group-stage match (knockout)
+                const hs = parseInt(f.homeScore) || 0;
+                const as = parseInt(f.awayScore) || 0;
+                home.gp++; away.gp++;
+                home.gf += hs; home.ga += as;
+                away.gf += as; away.ga += hs;
+                if (hs > as) { home.w++; home.pts += 3; away.l++; }
+                else if (hs < as) { away.w++; away.pts += 3; home.l++; }
+                else { home.d++; home.pts++; away.d++; away.pts++; }
+            }
+            // Sort each group by points → GD → GF
+            for (const g of groups) {
+                g.teams.forEach(t => t.gd = t.gf - t.ga);
+                g.teams.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+            }
+            return groups;
         }
 
         function renderGroups() {
             const el = document.getElementById('groups-list');
             const groups = deriveGroups();
-            if (!groups.length) {
-                el.innerHTML = '<div class="empty-msg">Group standings will populate once ESPN tags fixtures with group letters (around tournament start).</div>';
-                return;
-            }
             el.innerHTML = groups.map(g => {
                 const rows = g.teams.map((t, idx) => {
                     const advancing = idx < 2;
                     const owner = teamOwner(t.name);
                     const tag = `<span class="fixture-team-tag ${tagClass(owner)}">${owner}</span>`;
+                    const out = eliminatedTeams.has(normalizeTeam(t.name)) ? 'team-eliminated' : '';
                     return `
-                        <div class="group-row ${advancing ? 'advancing' : ''}" onclick='showTeam(${JSON.stringify(t.name)})'>
+                        <div class="group-row ${advancing ? 'advancing' : ''} ${out}" onclick='showTeam(${JSON.stringify(t.name)})'>
                             <div class="group-pos">${idx + 1}</div>
                             <div class="group-team"><span class="group-team-name">${t.name}</span> ${tag}</div>
                             <div class="group-stat">${t.gp}</div>
@@ -1408,44 +1563,61 @@
             }).join('');
         }
 
-        // ── RENDER: BRACKET ──
+        // ── RENDER: BRACKET (filled with official 2026 placeholder seedings) ──
+        function bracketSide(label) {
+            // label is either a placeholder like "1A" / "2C" / "3(A/B/C/D/F)"
+            // or could later be a real team name once filled in
+            return `<div class="bracket-match-row tbd">${label}</div>`;
+        }
+
         function renderBracket() {
             const el = document.getElementById('bracket-view');
-            const rounds = [
-                { label: 'Round of 32', count: 16 },
-                { label: 'Round of 16', count: 8 },
-                { label: 'Quarter-finals', count: 4 },
-                { label: 'Semi-finals', count: 2 },
-                { label: 'Final', count: 1 }
-            ];
-            // Get knockout fixtures (after group stage). For now, show TBD.
-            // ESPN's `notes` will include round name once group stage ends.
-            const ko = fixtures.filter(f => {
-                for (const n of (f.notes || [])) {
-                    const t = (n.headline || n.type || '').toLowerCase();
-                    if (t.includes('round of') || t.includes('quarter') || t.includes('semi') || t.includes('final')) return true;
-                }
-                return false;
-            });
-
+            const r32 = BRACKET_R32.map(m => `
+                <div class="bracket-match">
+                    <div class="bracket-match-num">M${m.m}</div>
+                    ${bracketSide(m.home)}
+                    ${bracketSide(m.away)}
+                </div>`).join('');
+            const buildFromRound = (round) => round.map(m => `
+                <div class="bracket-match">
+                    <div class="bracket-match-num">M${m.m}</div>
+                    ${bracketSide('Winner M' + m.from[0])}
+                    ${bracketSide('Winner M' + m.from[1])}
+                </div>`).join('');
+            const r16 = buildFromRound(BRACKET_R16);
+            const qf  = buildFromRound(BRACKET_QF);
+            const sf  = buildFromRound(BRACKET_SF);
+            const fnl = `
+                <div class="bracket-match">
+                    <div class="bracket-match-num">M${BRACKET_FINAL.m}</div>
+                    ${bracketSide('Winner M' + BRACKET_FINAL.from[0])}
+                    ${bracketSide('Winner M' + BRACKET_FINAL.from[1])}
+                </div>`;
             el.innerHTML = `
                 <div class="bracket-wrapper">
                     <div class="bracket-rounds">
-                        ${rounds.map(r => {
-                            const matches = Array.from({length: r.count}, () => `
-                                <div class="bracket-match">
-                                    <div class="bracket-match-row tbd">TBD</div>
-                                    <div class="bracket-match-row tbd">TBD</div>
-                                </div>`).join('');
-                            return `
-                                <div class="bracket-round">
-                                    <div class="bracket-round-label">${r.label}</div>
-                                    ${matches}
-                                </div>`;
-                        }).join('')}
+                        <div class="bracket-round">
+                            <div class="bracket-round-label">Round of 32</div>
+                            ${r32}
+                        </div>
+                        <div class="bracket-round">
+                            <div class="bracket-round-label">Round of 16</div>
+                            ${r16}
+                        </div>
+                        <div class="bracket-round">
+                            <div class="bracket-round-label">Quarter-finals</div>
+                            ${qf}
+                        </div>
+                        <div class="bracket-round">
+                            <div class="bracket-round-label">Semi-finals</div>
+                            ${sf}
+                        </div>
+                        <div class="bracket-round">
+                            <div class="bracket-round-label">Final</div>
+                            ${fnl}
+                        </div>
                     </div>
-                </div>
-                ${ko.length === 0 ? '<div class="empty-msg" style="padding:14px;">Knockout matchups will appear once the group stage concludes.</div>' : ''}`;
+                </div>`;
         }
 
         // ── MODALS ──
@@ -1486,7 +1658,7 @@
                 </div>
                 <div class="match-section">
                     <div class="match-section-title">Match Info</div>
-                    <div class="match-info-row"><div class="match-info-label">Date</div><div class="match-info-value">${f.date ? new Date(f.date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'TBD'}</div></div>
+                    <div class="match-info-row"><div class="match-info-label">Date</div><div class="match-info-value">${fmtDateTimeCT(f.date)}</div></div>
                     ${f.venue ? '<div class="match-info-row"><div class="match-info-label">Venue</div><div class="match-info-value">' + f.venue + '</div></div>' : ''}
                     <div class="match-info-row"><div class="match-info-label">${f.homeName}</div><div class="match-info-value">${f.homeOwner}</div></div>
                     <div class="match-info-row"><div class="match-info-label">${f.awayName}</div><div class="match-info-value">${f.awayOwner}</div></div>
@@ -1516,8 +1688,7 @@
                 const opp = oppHome ? f.awayName : f.homeName;
                 const teamScore = oppHome ? f.homeScore : f.awayScore;
                 const oppScore = oppHome ? f.awayScore : f.homeScore;
-                const dt = f.date ? new Date(f.date) : null;
-                const dateStr = dt ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD';
+                const dateStr = f.date ? fmtDateCT(f.date, { month: 'short', day: 'numeric' }) : 'TBD';
                 let result = '';
                 if (isPost) {
                     const tn = parseInt(teamScore)||0, on = parseInt(oppScore)||0;
@@ -1526,7 +1697,7 @@
                 return `
                     <div class="match-info-row">
                         <div class="match-info-label">${dateStr} &middot; ${oppHome ? 'vs' : '@'} ${opp}</div>
-                        <div class="match-info-value">${showScore ? (teamScore||0) + '–' + (oppScore||0) + ' ' + result : (f.statusDetail || dt ? dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '')}</div>
+                        <div class="match-info-value">${showScore ? (teamScore||0) + '–' + (oppScore||0) + ' ' + result : (f.statusDetail || fmtTimeCT(f.date))}</div>
                     </div>`;
             }).join('');
 
@@ -1581,7 +1752,10 @@
             const [espnRaw, polyRaw, bootRaw] = await Promise.all([
                 fetchESPN(), fetchPolymarket(), fetchPolymarketBoot()
             ]);
-            if (espnRaw) fixtures = parseFixtures(espnRaw);
+            if (espnRaw) {
+                fixtures = parseFixtures(espnRaw);
+                eliminatedTeams = computeEliminated();
+            }
             if (polyRaw) teamOdds = parsePolymarket(polyRaw);
             if (bootRaw) playerOdds = parsePolymarketBoot(bootRaw);
 
@@ -1605,7 +1779,7 @@
             }
 
             document.getElementById('last-updated').textContent =
-                'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                'Updated ' + fmtTimeCT(new Date().toISOString()) + ' CT';
             spinner.style.display = 'none';
             refreshText.textContent = 'Refresh';
         }
