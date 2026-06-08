@@ -1023,6 +1023,30 @@
             L: ['England', 'Croatia', 'Ghana', 'Panama']
         };
 
+        // FIFA 2026 official venue names (commercial sponsors stripped).
+        // Keyed by ESPN's venue.fullName.
+        const FIFA_VENUE = {
+            'AT&T Stadium': 'Dallas',
+            'MetLife Stadium': 'New York',
+            'Mercedes-Benz Stadium': 'Atlanta',
+            'Arrowhead Stadium': 'Kansas City',
+            'NRG Stadium': 'Houston',
+            "Levi's Stadium": 'Bay Area',
+            'SoFi Stadium': 'Los Angeles',
+            'Lincoln Financial Field': 'Philadelphia',
+            'Lumen Field': 'Seattle',
+            'Gillette Stadium': 'Boston',
+            'Hard Rock Stadium': 'Miami',
+            'BMO Field': 'Toronto',
+            'BC Place': 'Vancouver',
+            'Estadio Azteca': 'Mexico City',
+            'Estadio Banorte': 'Mexico City',
+            'Estadio BBVA': 'Monterrey',
+            'Estadio Monterrey': 'Monterrey',
+            'Estadio Akron': 'Guadalajara',
+            'Estadio Guadalajara': 'Guadalajara'
+        };
+
         // ── BRACKET (R32 → Final, per FIFA 2026 published structure) ──
         const BRACKET_R32 = [
             { m: 73, home: '2A', away: '2B' },
@@ -1099,6 +1123,11 @@
             const m = parts.find(p => p.type === 'month').value;
             const day = parts.find(p => p.type === 'day').value;
             return y + '-' + m + '-' + day;
+        }
+
+        // FIFA host city display (no "Stadium" suffix anywhere)
+        function fifaCity(f) {
+            return FIFA_VENUE[f.venue] || (f.venueCity || '').split(',')[0].trim() || '';
         }
 
         function fmtPct(p) {
@@ -1219,8 +1248,10 @@
             return out;
         }
 
+        let playerOddsList = [];   // [{name, prob}] sorted by prob desc — for the Top Scorers section
         function parsePolymarketBoot(raw) {
             const out = {};
+            playerOddsList = [];
             if (!raw || !raw[0]) return out;
             const markets = raw[0].markets || [];
             for (const m of markets) {
@@ -1233,12 +1264,14 @@
                 if (yesIdx < 0) continue;
                 const yesPrice = parseFloat(prices[yesIdx]);
                 if (isNaN(yesPrice)) continue;
-                // "Will Lionel Messi be the top goalscorer at the 2026 FIFA World Cup?"
                 const match = (m.question || '').match(/^Will\s+(.+?)\s+be\s+the\s+top/i);
                 if (!match) continue;
                 const playerName = match[1].trim();
-                out[playerName.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')] = yesPrice;
+                const key = playerName.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+                out[key] = yesPrice;
+                playerOddsList.push({ name: playerName, prob: yesPrice });
             }
+            playerOddsList.sort((a, b) => b.prob - a.prob);
             return out;
         }
 
@@ -1415,20 +1448,34 @@
 
         function renderTopScorers() {
             const el = document.getElementById('top-scorers');
-            const list = Object.entries(goalScorers)
+            // Once goals are scored, show live goal leaders. Pre-tournament: top 20 Polymarket odds.
+            const liveList = Object.entries(goalScorers)
                 .map(([name, goals]) => ({ name, goals }))
-                .sort((a, b) => b.goals - a.goals)
-                .slice(0, 20);
+                .sort((a, b) => b.goals - a.goals);
+            const useLive = liveList.length > 0;
+            const list = useLive ? liveList.slice(0, 20) : playerOddsList.slice(0, 20);
             if (!list.length) {
-                el.innerHTML = '<div class="empty-msg">Goal scorers will appear here once matches begin.</div>';
+                el.innerHTML = '<div class="empty-msg">No data yet.</div>';
                 return;
             }
-            el.innerHTML = list.map((s, i) => `
-                <div class="scorer-row">
-                    <div class="scorer-rank">${i + 1}</div>
-                    <div class="scorer-name">${s.name}</div>
-                    <div class="scorer-goals">${s.goals}</div>
-                </div>`).join('');
+            const headerLabel = useLive ? 'GOALS' : 'BOOT %';
+            el.innerHTML = `
+                <div class="scorer-row" style="background:var(--cream-light);font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-light);">
+                    <div class="scorer-rank">#</div>
+                    <div class="scorer-name">Player</div>
+                    <div class="scorer-goals" style="color:var(--text-light);font-size:9px;font-family:'DM Sans',sans-serif;font-weight:700;">${headerLabel}</div>
+                </div>
+                ${list.map((s, i) => {
+                    const matched = matchPlayer(s.name);
+                    const ownerTag = matched ? `<span class="fixture-team-tag ${tagClass(matched.owner)}" style="margin-left:6px;">${matched.owner}</span>` : '';
+                    const rightVal = useLive ? s.goals : fmtPct(s.prob);
+                    return `
+                        <div class="scorer-row">
+                            <div class="scorer-rank">${i + 1}</div>
+                            <div class="scorer-name">${s.name}${ownerTag}</div>
+                            <div class="scorer-goals">${rightVal}</div>
+                        </div>`;
+                }).join('')}`;
         }
 
         function toggleOwner(key) {
@@ -1468,8 +1515,7 @@
                     let status = f.statusDetail || '';
                     if (!isPost && !isLive && f.date) status = fmtTimeCT(f.date);
                     const showScore = isPost || isLive;
-                    // Show city only (strip state suffix: "Inglewood, California" -> "Inglewood")
-                    const venueShort = (f.venueCity || '').split(',')[0].trim();
+                    const venueShort = fifaCity(f);
                     const homeOut = eliminatedTeams.has(normalizeTeam(f.homeName)) ? 'team-eliminated' : '';
                     const awayOut = eliminatedTeams.has(normalizeTeam(f.awayName)) ? 'team-eliminated' : '';
                     return `
@@ -1660,13 +1706,13 @@
                 <div class="match-section">
                     <div class="match-section-title">Match Info</div>
                     <div class="match-info-row"><div class="match-info-label">Date</div><div class="match-info-value">${fmtDateTimeCT(f.date)}</div></div>
-                    ${f.venue ? '<div class="match-info-row"><div class="match-info-label">Venue</div><div class="match-info-value">' + f.venue + '</div></div>' : ''}
+                    ${fifaCity(f) ? '<div class="match-info-row"><div class="match-info-label">Host city</div><div class="match-info-value">' + fifaCity(f) + '</div></div>' : ''}
                     <div class="match-info-row"><div class="match-info-label">${f.homeName}</div><div class="match-info-value">${f.homeOwner}</div></div>
                     <div class="match-info-row"><div class="match-info-label">${f.awayName}</div><div class="match-info-value">${f.awayOwner}</div></div>
                 </div>
                 ${oddsHtml}`;
 
-            openModal(f.homeName + ' vs ' + f.awayName, (f.venue || 'Venue TBD') + ' &middot; ' + (f.statusDetail || ''), body);
+            openModal(f.homeName + ' vs ' + f.awayName, (fifaCity(f) || 'Host TBD') + ' &middot; ' + (f.statusDetail || ''), body);
         }
 
         function showTeam(teamName) {
