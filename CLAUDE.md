@@ -1,0 +1,141 @@
+# World Cup Pool — 2026 FIFA World Cup Tracker
+
+A mobile-first fantasy tracker for the 2026 FIFA World Cup auction pool with 4 friends (Mike, Joe, Reed, Will).
+
+> **READ THIS BEFORE EDITING.** The pool rules and data flow have non-obvious quirks documented here.
+
+---
+
+## Pool Rules
+
+- **4 owners**: Mike, Joe, Reed, Will. Each had a $100 auction budget.
+- **Winner = whoever owns the team that wins the World Cup.** Winner-take-all.
+- **17 named teams** were auctioned. The remaining 31 teams ("the Field") were bought by Mike for $29. So Mike owns 7 named teams + the Field.
+- **Golden Boot side pool**: each owner randomly drew 5 players. Whoever owns the tournament's top scorer (FIFA Golden Boot) wins the side pot.
+
+### Team ownership (with auction cost)
+
+| Owner | Spent | Teams |
+|---|---|---|
+| Joe | $100 | France $78, Colombia $10, Mexico $5, Japan $5, Sweden $2 |
+| Mike | $100 | Brazil $13, Norway $11, Argentina $13, Netherlands $13, Germany $12, Belgium $7, Morocco $2, **Field $29** |
+| Reed | $100 | England $60, Portugal $40 |
+| Will | $100 | Spain $81, USA $13, Switzerland $6 |
+
+### Golden Boot rosters
+
+| Joe | Mike | Reed | Will |
+|---|---|---|---|
+| Igor Thiago | Haaland | Wirtz | Dembélé |
+| C. Ronaldo | Woltemade | Mbappé | F. Torres |
+| Vini Jr | Havertz | Oyarzabal | Gakpo |
+| Kane | Yamal | Raphinha | Lukaku |
+| Olise | Lautaro Martínez | J. Álvarez | Messi |
+
+---
+
+## Tournament Facts
+
+- **2026 FIFA World Cup**: June 11 – July 19, 2026
+- **Hosts**: USA, Canada, Mexico
+- **48 teams**, 12 groups of 4 → Round of 32 (top 2 from each group + best 8 third-placed teams) → R16 → QF → SF → Final
+- **104 total matches** (100 fixtures + final)
+- **ESPN event slug**: `soccer/fifa.world`
+
+---
+
+## Data Sources
+
+### ESPN (fixtures, scores, group standings, per-match odds)
+
+```
+GET https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719
+```
+
+Returns ~100 events. Each event has:
+- `competitions[0].competitors[]` with `team.displayName`, `score`, `homeAway`
+- `competitions[0].status.type` with `state` (`pre`/`in`/`post`), `shortDetail` (e.g. "FT", "85'", "Half")
+- `competitions[0].odds[]` with DraftKings moneyline + over/under per game
+- `competitions[0].venue.fullName`
+
+Group standings:
+```
+GET https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings
+```
+
+### Polymarket (championship probabilities)
+
+The "World Cup Winner" event at `gamma-api.polymarket.com/events?slug=world-cup-winner` has ~60 individual markets like *"Will Spain win the 2026 FIFA World Cup?"*. Each has `outcomePrices` (a JSON string) with "Yes" probability in `[0]`.
+
+Parse the team name out of the question with `/^Will\s+(.+?)\s+win/i` and aggregate per owner.
+
+**Golden Boot odds aren't on Polymarket yet** (the event hasn't been listed). For now we just track live goal counts. If markets appear closer to the tournament, plug them in similarly.
+
+### Owner odds calculation
+
+```
+Joe's odds   = sum of (Polymarket P) for Joe's teams
+Reed's odds  = same
+Will's odds  = same
+Mike's odds  = sum of Mike's named teams + Field
+             = sum of Mike's named teams + (1 - sum of ALL named teams across all owners)
+```
+
+The 100% across all 4 owners must sum to 1 (any team must win). If Polymarket prices don't sum to exactly 1 (they often don't due to vig and rounding), the Field bucket absorbs the slack — which lands on Mike. That's fine because that's exactly what Mike paid for.
+
+---
+
+## Team Name Aliases
+
+Polymarket and ESPN sometimes disagree on country names. Known aliases (case-insensitive):
+- `United States` ↔ `USA`
+- `South Korea` ↔ `Korea Republic`
+- `Czechia` ↔ `Czech Republic`
+- `Côte d'Ivoire` ↔ `Ivory Coast`
+
+Always normalize names through `name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')` to handle accents (e.g. `Ousmane Dembélé` ↔ `dembele`).
+
+---
+
+## Layout
+
+Single-page app, mobile-first:
+
+1. **Header** — sticky pitch-green band with title + refresh.
+2. **Pool Standings** — 4 owner cards sorted by current win probability. Tap to expand and see each owner's teams with their individual probabilities + cost paid.
+3. **Golden Boot** — 4 owner cards sorted by their leading player's goal count. Tap to expand and see all 5 players + goal counts.
+4. **Tabs**: Fixtures · Groups · Bracket
+   - **Fixtures**: all 100 games grouped by date, click any row to open match details. Pool teams get color tags.
+   - **Groups**: 12 group tables, top 2 highlighted (advance directly to R32).
+   - **Bracket**: 32-team knockout view. Empty pre-tournament; fills in once group stage ends.
+5. **Match modal** — tap a fixture row for score, time, venue, owner tags, and per-game odds.
+
+---
+
+## Owner Colors (consistent across the app)
+
+- Joe → red `#e74c3c`
+- Mike → blue `#3498db`
+- Reed → gold `#d4a017`
+- Will → green `#27ae60`
+
+---
+
+## Hosting
+
+- GitHub repo: `Peruna27/World-Cup-Pool` (user creates on GitHub)
+- GitHub Pages live URL: `https://peruna27.github.io/World-Cup-Pool/`
+- Static HTML/JS, no build, no backend. Push to `main` → Pages rebuilds in ~60s.
+- Git identity: `Local User <local@local>` (placeholder).
+
+---
+
+## Known Pitfalls (will hit these next time)
+
+- **Polymarket markets sum to >1**: vig is built in (e.g. all "Yes" prices total ~1.10). If you want true probabilities, normalize by dividing each by the sum. For Mike's Field calculation, this means the Field probability uses the un-normalized remainder, which is roughly fair.
+- **CORS**: ESPN and Polymarket public APIs allow browser CORS. If either changes, we'd need a CORS proxy or a backend.
+- **Inactive markets**: Polymarket has some `active: false` markets for teams that didn't qualify. Skip those in the parser (already done).
+- **Browser concurrent connection limit**: Don't fire 100+ per-event status requests in parallel. Batch in 6–8 (same lesson from Golf-League's tee-time fetch).
+- **Bracket structure**: 2026 World Cup uses a Round of 32 (new for 48-team format). Don't assume Round of 16 is the start of knockouts.
+- **Names with accents**: always `normalize('NFD').replace(/[̀-ͯ]/g, '')` before matching.
+- **Mike owns the Field**: his card must show the Field as a "team" with its computed probability. Don't omit it just because it's synthetic.
