@@ -10,11 +10,14 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
-            --pitch-green: #1a5530;
-            --pitch-green-dark: #103820;
-            --pitch-green-deep: #0a2515;
-            --gold: #d4af37;
-            --gold-light: #e8cc6e;
+            /* World Cup brand: deep navy + gold accent (FIFA broadcast palette) */
+            --brand-navy: #1a2342;
+            --brand-navy-dark: #11172f;
+            --brand-navy-deep: #080c1e;
+            --brand-gold: #f5c63b;
+            --brand-gold-bright: #ffd700;
+            --brand-red: #c8102e;
+
             --cream: #f5f0e1;
             --cream-light: #faf7ef;
             --cream-dark: #e8e0ca;
@@ -48,17 +51,18 @@
 
         /* ── Header ── */
         header {
-            background: var(--pitch-green);
+            background: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-navy-dark) 100%);
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+            border-bottom: 2px solid var(--brand-gold);
         }
 
         .header-inner {
             max-width: 700px;
             margin: 0 auto;
-            padding: 14px 16px;
+            padding: 14px 16px 10px;
             text-align: center;
         }
 
@@ -66,12 +70,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
         }
 
-        .header-logo {
-            font-size: 26px;
-            line-height: 1;
+        .header-logo-img {
+            height: 44px;
+            width: auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
         }
 
         header h1 {
@@ -79,7 +84,7 @@
             font-weight: 700;
             font-style: italic;
             font-size: 22px;
-            color: #fff;
+            color: var(--brand-gold);
             letter-spacing: 0.5px;
         }
 
@@ -87,9 +92,10 @@
             font-family: 'Libre Baskerville', Georgia, serif;
             font-style: italic;
             font-size: 11px;
-            color: rgba(255,255,255,0.65);
+            color: rgba(255,255,255,0.7);
             margin-top: 2px;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .header-controls {
@@ -101,9 +107,9 @@
         }
 
         .refresh-btn {
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.25);
-            color: #fff;
+            background: rgba(245, 198, 59, 0.12);
+            border: 1px solid rgba(245, 198, 59, 0.4);
+            color: var(--brand-gold);
             padding: 5px 16px;
             border-radius: 4px;
             font-size: 11px;
@@ -113,14 +119,14 @@
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
-        .refresh-btn:active { background: rgba(255,255,255,0.25); }
+        .refresh-btn:active { background: rgba(245, 198, 59, 0.3); }
 
         .spinner {
             display: none;
             width: 14px;
             height: 14px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
+            border: 2px solid rgba(245, 198, 59, 0.3);
+            border-top-color: var(--brand-gold);
             border-radius: 50%;
             animation: spin 0.7s linear infinite;
         }
@@ -129,6 +135,36 @@
         .last-updated {
             font-size: 10px;
             color: rgba(255,255,255,0.55);
+        }
+
+        /* ── Main view tabs (Games / Goals) ── */
+        .main-tabs {
+            background: var(--brand-navy-dark);
+            display: flex;
+            border-bottom: 1px solid var(--brand-navy-deep);
+            position: sticky;
+            top: 86px;
+            z-index: 99;
+        }
+        .main-tab-btn {
+            flex: 1;
+            padding: 12px 8px;
+            background: transparent;
+            border: none;
+            font-family: 'Libre Baskerville', Georgia, serif;
+            font-style: italic;
+            font-weight: 700;
+            font-size: 15px;
+            color: rgba(255,255,255,0.55);
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: color 0.2s, background 0.2s;
+            text-transform: uppercase;
+        }
+        .main-tab-btn.active {
+            color: var(--brand-gold);
+            background: var(--brand-navy);
+            box-shadow: inset 0 -3px 0 var(--brand-gold);
         }
 
         .status-banner {
@@ -142,17 +178,19 @@
             border-bottom: 1px solid var(--border);
         }
 
-        /* ── Container ── */
         .container {
             max-width: 700px;
             margin: 0 auto;
             padding: 0 10px 40px;
         }
 
+        .view { display: none; }
+        .view.active { display: block; }
+
         /* ── Section header ── */
         .section-header {
-            background: var(--pitch-green);
-            color: #fff;
+            background: var(--brand-navy);
+            color: var(--brand-gold);
             font-family: 'Libre Baskerville', Georgia, serif;
             font-weight: 700;
             font-style: italic;
@@ -162,6 +200,7 @@
             padding: 9px 16px;
             margin-top: 14px;
             border-radius: 4px 4px 0 0;
+            border-bottom: 2px solid var(--brand-gold);
         }
 
         .board {
@@ -174,10 +213,8 @@
             margin-bottom: 2px;
         }
 
-        /* ── Owner cards (Pool Standings + Golden Boot) ── */
-        .owner-card {
-            border-bottom: 1px solid var(--border-light);
-        }
+        /* ── Owner cards ── */
+        .owner-card { border-bottom: 1px solid var(--border-light); }
         .owner-card:last-child { border-bottom: none; }
 
         .owner-header {
@@ -199,7 +236,7 @@
             text-align: center;
             margin-right: 12px;
         }
-        .rank-1 { color: var(--gold); }
+        .rank-1 { color: var(--brand-gold); }
         .rank-2 { color: #8a8a8a; }
         .rank-3 { color: #a67c52; }
         .rank-4 { color: #6b7a85; }
@@ -257,16 +294,19 @@
             overflow: hidden;
             transition: max-height 0.35s ease;
         }
-        .owner-card.open .owner-detail-panel { max-height: 800px; }
+        .owner-card.open .owner-detail-panel { max-height: 1200px; }
 
-        /* Team / player row */
         .roster-row {
             display: flex;
             align-items: center;
             padding: 8px 14px;
             font-size: 13px;
             border-top: 1px solid var(--border-light);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
+        .roster-row:active { background: var(--cream-light); }
+        .roster-row.field-bucket { cursor: default; opacity: 0.85; font-style: italic; }
         .roster-row.eliminated { opacity: 0.35; text-decoration: line-through; text-decoration-color: rgba(192,57,43,0.4); }
 
         .roster-flag {
@@ -282,9 +322,13 @@
             font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.3px;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .roster-cost {
-            width: 50px;
+            width: 44px;
             text-align: right;
             font-family: 'DM Sans', sans-serif;
             font-size: 11px;
@@ -299,8 +343,8 @@
             font-size: 14px;
         }
 
-        /* ── Tabs ── */
-        .tabs {
+        /* ── Sub-tabs (Fixtures / Groups / Bracket inside Games) ── */
+        .sub-tabs {
             display: flex;
             margin-top: 18px;
             background: var(--board-white);
@@ -308,7 +352,7 @@
             border-radius: 4px;
             overflow: hidden;
         }
-        .tab-btn {
+        .sub-tab-btn {
             flex: 1;
             padding: 10px 6px;
             background: transparent;
@@ -322,27 +366,24 @@
             cursor: pointer;
             border-right: 1px solid var(--border-light);
         }
-        .tab-btn:last-child { border-right: none; }
-        .tab-btn.active {
-            background: var(--pitch-green);
-            color: #fff;
+        .sub-tab-btn:last-child { border-right: none; }
+        .sub-tab-btn.active {
+            background: var(--brand-navy);
+            color: var(--brand-gold);
         }
 
-        .tab-panel {
+        .sub-panel {
             display: none;
             background: var(--board-white);
             border: 1px solid var(--border);
             border-top: none;
             border-radius: 0 0 4px 4px;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-            margin-top: 0;
         }
-        .tab-panel.active { display: block; }
+        .sub-panel.active { display: block; }
 
         /* ── Fixtures ── */
-        .fixture-date-group {
-            border-bottom: 1px solid var(--border-light);
-        }
+        .fixture-date-group { border-bottom: 1px solid var(--border-light); }
         .fixture-date-header {
             background: var(--cream-light);
             padding: 6px 14px;
@@ -395,7 +436,13 @@
             gap: 6px;
             padding: 1px 0;
         }
-        .fixture-team-name { flex: 1; }
+        .fixture-team-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
         .fixture-team-tag {
             font-family: 'DM Sans', sans-serif;
             font-size: 8px;
@@ -403,6 +450,7 @@
             border-radius: 3px;
             font-weight: 700;
             letter-spacing: 0.3px;
+            white-space: nowrap;
         }
         .tag-joe { background: var(--joe-bg); color: var(--joe); }
         .tag-mike { background: var(--mike-bg); color: var(--mike); }
@@ -416,12 +464,11 @@
             font-weight: 900;
             font-size: 15px;
             flex-shrink: 0;
+            line-height: 1.3;
         }
 
         /* ── Groups ── */
-        .group-card {
-            border-bottom: 1px solid var(--border-light);
-        }
+        .group-card { border-bottom: 1px solid var(--border-light); }
         .group-card:last-child { border-bottom: none; }
 
         .group-header {
@@ -436,9 +483,10 @@
             border-bottom: 1px solid var(--border-light);
             display: flex;
             justify-content: space-between;
+            gap: 4px;
         }
-        .group-header span { width: 24px; text-align: center; }
-        .group-header span.team-label { flex: 1; text-align: left; }
+        .group-header span { width: 24px; text-align: center; flex-shrink: 0; }
+        .group-header span.team-label { flex: 1; text-align: left; width: auto; }
 
         .group-row {
             display: flex;
@@ -446,9 +494,13 @@
             padding: 7px 14px;
             font-size: 12px;
             border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            gap: 4px;
         }
+        .group-row:active { background: var(--cream-light); }
         .group-row:last-child { border-bottom: none; }
-        .group-row.advancing { background: rgba(39, 174, 96, 0.06); }
+        .group-row.advancing { background: rgba(245, 198, 59, 0.06); }
 
         .group-pos {
             width: 18px;
@@ -456,6 +508,7 @@
             font-size: 10px;
             font-weight: 700;
             color: var(--text-light);
+            flex-shrink: 0;
         }
         .group-team {
             flex: 1;
@@ -466,6 +519,13 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            min-width: 0;
+        }
+        .group-team-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
         }
         .group-stat {
             width: 24px;
@@ -474,6 +534,7 @@
             font-size: 11px;
             font-weight: 600;
             color: var(--text-mid);
+            flex-shrink: 0;
         }
         .group-pts {
             width: 24px;
@@ -481,6 +542,7 @@
             font-family: 'Source Serif 4', serif;
             font-weight: 800;
             font-size: 13px;
+            flex-shrink: 0;
         }
 
         /* ── Bracket ── */
@@ -532,9 +594,39 @@
         .bracket-match-row + .bracket-match-row {
             border-top: 1px solid var(--border-light);
         }
-        .bracket-match-row.tbd { color: var(--text-light); }
+        .bracket-match-row.tbd { color: var(--text-light); font-style: italic; }
 
-        /* ── Match details modal ── */
+        /* ── Top scorers (Goals view) ── */
+        .scorer-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 14px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .scorer-row:last-child { border-bottom: none; }
+        .scorer-rank {
+            width: 24px;
+            font-family: 'Source Serif 4', serif;
+            font-weight: 800;
+            font-size: 13px;
+            color: var(--text-light);
+        }
+        .scorer-name {
+            flex: 1;
+            font-family: 'Source Serif 4', serif;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+        .scorer-goals {
+            font-family: 'Source Serif 4', serif;
+            font-weight: 900;
+            font-size: 16px;
+            color: var(--brand-red);
+        }
+
+        /* ── Modal ── */
         .modal-overlay {
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.72);
@@ -560,18 +652,20 @@
         }
         @keyframes pop { from { transform: translateY(12px) scale(0.96); opacity: 0; } to { transform: none; opacity: 1; } }
         .modal-header {
-            background: var(--pitch-green);
+            background: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-navy-dark) 100%);
             color: #fff;
             padding: 14px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 2px solid var(--brand-gold);
         }
         .modal-title {
             font-family: 'Source Serif 4', serif;
             font-weight: 800;
             font-size: 16px;
             text-transform: uppercase;
+            color: var(--brand-gold);
         }
         .modal-sub {
             font-family: 'DM Sans', sans-serif;
@@ -581,15 +675,17 @@
             letter-spacing: 0.5px;
         }
         .modal-close {
-            background: rgba(255,255,255,0.15);
-            border: none; color: #fff;
+            background: rgba(245,198,59,0.15);
+            border: 1px solid rgba(245,198,59,0.3);
+            color: var(--brand-gold);
             width: 30px; height: 30px; border-radius: 50%;
             font-size: 22px; line-height: 1;
             cursor: pointer; display: flex;
             align-items: center; justify-content: center;
             flex-shrink: 0; margin-left: 12px;
+            padding: 0;
         }
-        .modal-body { padding: 16px; }
+        .modal-body { padding: 16px; max-height: 70vh; overflow-y: auto; }
 
         .match-score-block {
             text-align: center;
@@ -612,15 +708,6 @@
             margin-top: 4px;
             text-transform: uppercase;
             letter-spacing: 1px;
-        }
-        .match-team-row {
-            display: flex;
-            justify-content: space-between;
-            font-family: 'Source Serif 4', serif;
-            font-size: 13px;
-            font-weight: 700;
-            padding: 4px 0;
-            text-transform: uppercase;
         }
         .match-info-row {
             display: flex;
@@ -648,7 +735,6 @@
             margin-bottom: 8px;
         }
 
-        /* ── Error / empty states ── */
         .empty-msg {
             text-align: center;
             padding: 30px 18px;
@@ -657,7 +743,6 @@
             font-style: italic;
         }
 
-        /* ── Footer ── */
         .footer {
             text-align: center;
             padding: 16px 12px;
@@ -668,11 +753,10 @@
         .footer-wordmark {
             font-family: 'Libre Baskerville', Georgia, serif;
             font-style: italic;
-            color: var(--pitch-green);
+            color: var(--brand-navy);
             font-weight: 700;
         }
 
-        /* ── Responsive ── */
         @media (min-width: 500px) {
             header h1 { font-size: 26px; }
             .container { padding: 0 16px 40px; }
@@ -683,7 +767,7 @@
     <header>
         <div class="header-inner">
             <div class="header-title">
-                <span class="header-logo">⚽</span>
+                <img class="header-logo-img" src="https://upload.wikimedia.org/wikipedia/en/thumb/1/17/2026_FIFA_World_Cup_emblem.svg/250px-2026_FIFA_World_Cup_emblem.svg.png" alt="2026 FIFA World Cup">
                 <h1>World Cup Pool</h1>
             </div>
             <div class="subtitle">USA &middot; Canada &middot; Mexico &middot; 2026</div>
@@ -697,69 +781,88 @@
         </div>
     </header>
 
+    <div class="main-tabs">
+        <button class="main-tab-btn active" data-view="games">Games</button>
+        <button class="main-tab-btn" data-view="goals">Goals</button>
+    </div>
+
     <div id="status-banner"></div>
 
-    <div class="container">
+    <!-- GAMES VIEW -->
+    <div class="view active" id="games-view">
+        <div class="container">
+            <div class="section-header">Pool Standings</div>
+            <div class="board">
+                <div id="pool-standings"></div>
+            </div>
 
-        <div class="section-header">Pool Standings</div>
-        <div class="board">
-            <div id="pool-standings"></div>
-        </div>
+            <div class="sub-tabs">
+                <button class="sub-tab-btn active" data-sub="fixtures">Fixtures</button>
+                <button class="sub-tab-btn" data-sub="groups">Groups</button>
+                <button class="sub-tab-btn" data-sub="bracket">Bracket</button>
+            </div>
 
-        <div class="section-header">Golden Boot</div>
-        <div class="board">
-            <div id="golden-boot"></div>
-        </div>
+            <div id="fixtures-panel" class="sub-panel active">
+                <div id="fixtures-list"></div>
+            </div>
+            <div id="groups-panel" class="sub-panel">
+                <div id="groups-list"></div>
+            </div>
+            <div id="bracket-panel" class="sub-panel">
+                <div id="bracket-view"></div>
+            </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="fixtures">Fixtures</button>
-            <button class="tab-btn" data-tab="groups">Groups</button>
-            <button class="tab-btn" data-tab="bracket">Bracket</button>
-        </div>
-
-        <div id="fixtures-panel" class="tab-panel active">
-            <div id="fixtures-list"></div>
-        </div>
-        <div id="groups-panel" class="tab-panel">
-            <div id="groups-list"></div>
-        </div>
-        <div id="bracket-panel" class="tab-panel">
-            <div id="bracket-view"></div>
-        </div>
-
-        <div class="footer">
-            Auto-refreshes every 60 seconds &middot; Scores via ESPN &middot; Odds via Polymarket<br>
-            <span class="footer-wordmark">World Cup Pool 2026</span>
+            <div class="footer">
+                Auto-refreshes every 60 seconds &middot; Scores via ESPN &middot; Odds via Polymarket<br>
+                <span class="footer-wordmark">World Cup Pool 2026</span>
+            </div>
         </div>
     </div>
 
-    <!-- Match details modal -->
-    <div class="modal-overlay" id="match-modal" onclick="closeMatch(event)">
+    <!-- GOALS VIEW -->
+    <div class="view" id="goals-view">
+        <div class="container">
+            <div class="section-header">Golden Boot Standings</div>
+            <div class="board">
+                <div id="golden-boot"></div>
+            </div>
+
+            <div class="section-header">Tournament Top Scorers</div>
+            <div class="board">
+                <div id="top-scorers"></div>
+            </div>
+
+            <div class="footer">
+                <span class="footer-wordmark">World Cup Pool 2026</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic modal -->
+    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
         <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <div>
-                    <div class="modal-title" id="match-title"></div>
-                    <div class="modal-sub" id="match-sub"></div>
+                    <div class="modal-title" id="modal-title"></div>
+                    <div class="modal-sub" id="modal-sub"></div>
                 </div>
-                <button class="modal-close" onclick="closeMatch()">&times;</button>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
-            <div class="modal-body" id="match-body"></div>
+            <div class="modal-body" id="modal-body"></div>
         </div>
     </div>
 
     <script>
-        // ── OWNERS + ROSTERS (2026 World Cup Pool) ──
-        // Each owner: teams (with cost paid), and 5 Golden Boot players.
-        // Mike also owns "the Field" — every team not explicitly owned by Joe/Reed/Will.
+        // ── OWNERS + ROSTERS ──
         const OWNERS = {
             'Joe': {
-                color: 'joe', emoji: '🔴',
+                color: 'joe',
                 teams: [
-                    { name: 'France', cost: 78, search: ['france'], flag: '🇫🇷' },
-                    { name: 'Colombia', cost: 10, search: ['colombia'], flag: '🇨🇴' },
-                    { name: 'Mexico', cost: 5, search: ['mexico'], flag: '🇲🇽' },
-                    { name: 'Japan', cost: 5, search: ['japan'], flag: '🇯🇵' },
-                    { name: 'Sweden', cost: 2, search: ['sweden'], flag: '🇸🇪' }
+                    { name: 'France', cost: 78, flag: '🇫🇷' },
+                    { name: 'Colombia', cost: 10, flag: '🇨🇴' },
+                    { name: 'Mexico', cost: 5, flag: '🇲🇽' },
+                    { name: 'Japan', cost: 5, flag: '🇯🇵' },
+                    { name: 'Sweden', cost: 2, flag: '🇸🇪' }
                 ],
                 players: [
                     { name: 'Igor Thiago', search: ['igor thiago'] },
@@ -770,16 +873,16 @@
                 ]
             },
             'Mike': {
-                color: 'mike', emoji: '🔵', ownsField: true,
+                color: 'mike', ownsField: true,
                 teams: [
-                    { name: 'Brazil', cost: 13, search: ['brazil'], flag: '🇧🇷' },
-                    { name: 'Norway', cost: 11, search: ['norway'], flag: '🇳🇴' },
-                    { name: 'Argentina', cost: 13, search: ['argentina'], flag: '🇦🇷' },
-                    { name: 'Netherlands', cost: 13, search: ['netherlands'], flag: '🇳🇱' },
-                    { name: 'Germany', cost: 12, search: ['germany'], flag: '🇩🇪' },
-                    { name: 'Belgium', cost: 7, search: ['belgium'], flag: '🇧🇪' },
-                    { name: 'Morocco', cost: 2, search: ['morocco'], flag: '🇲🇦' },
-                    { name: 'The Field', cost: 29, search: ['__field__'], flag: '🌍', isField: true }
+                    { name: 'Brazil', cost: 13, flag: '🇧🇷' },
+                    { name: 'Norway', cost: 11, flag: '🇳🇴' },
+                    { name: 'Argentina', cost: 13, flag: '🇦🇷' },
+                    { name: 'Netherlands', cost: 13, flag: '🇳🇱' },
+                    { name: 'Germany', cost: 12, flag: '🇩🇪' },
+                    { name: 'Belgium', cost: 7, flag: '🇧🇪' },
+                    { name: 'Morocco', cost: 2, flag: '🇲🇦' },
+                    { name: 'The Field', cost: 29, flag: '🌍', isField: true }
                 ],
                 players: [
                     { name: 'Erling Haaland', search: ['haaland'] },
@@ -790,10 +893,10 @@
                 ]
             },
             'Reed': {
-                color: 'reed', emoji: '🟡',
+                color: 'reed',
                 teams: [
-                    { name: 'England', cost: 60, search: ['england'], flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-                    { name: 'Portugal', cost: 40, search: ['portugal'], flag: '🇵🇹' }
+                    { name: 'England', cost: 60, flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+                    { name: 'Portugal', cost: 40, flag: '🇵🇹' }
                 ],
                 players: [
                     { name: 'Florian Wirtz', search: ['wirtz'] },
@@ -804,11 +907,11 @@
                 ]
             },
             'Will': {
-                color: 'will', emoji: '🟢',
+                color: 'will',
                 teams: [
-                    { name: 'Spain', cost: 81, search: ['spain'], flag: '🇪🇸' },
-                    { name: 'USA', cost: 13, search: ['united states', 'usa'], flag: '🇺🇸' },
-                    { name: 'Switzerland', cost: 6, search: ['switzerland'], flag: '🇨🇭' }
+                    { name: 'Spain', cost: 81, flag: '🇪🇸' },
+                    { name: 'USA', cost: 13, flag: '🇺🇸' },
+                    { name: 'Switzerland', cost: 6, flag: '🇨🇭' }
                 ],
                 players: [
                     { name: 'Ousmane Dembélé', search: ['dembele', 'dembélé'] },
@@ -820,33 +923,32 @@
             }
         };
 
-        // Map ESPN/Polymarket team names → owner
-        const TEAM_OWNER = {};  // populated on init
-        const ALL_NAMED_TEAMS = new Set();
+        const TEAM_OWNER = {};
         for (const [ownerName, owner] of Object.entries(OWNERS)) {
             for (const t of owner.teams) {
                 if (t.isField) continue;
                 t.owner = ownerName;
                 TEAM_OWNER[t.name.toLowerCase()] = ownerName;
-                ALL_NAMED_TEAMS.add(t.name.toLowerCase());
             }
         }
-        // Aliases (Polymarket / ESPN can use different names)
         const TEAM_ALIASES = {
             'united states': 'usa', 'u.s.a.': 'usa', 'united states of america': 'usa',
-            'south korea': 'south korea', 'korea republic': 'south korea',
+            'korea republic': 'south korea', 'rep. of korea': 'south korea',
             'czechia': 'czech republic',
             'côte d\'ivoire': 'ivory coast', 'cote d\'ivoire': 'ivory coast'
         };
-        function teamOwner(rawName) {
-            const lower = (rawName || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-            const norm = TEAM_ALIASES[lower] || lower;
-            if (TEAM_OWNER[norm]) return TEAM_OWNER[norm];
-            // unowned named team → field bucket (Mike)
-            return 'Mike-field';
+        function normalizeTeam(name) {
+            const lower = (name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+            return TEAM_ALIASES[lower] || lower;
+        }
+        function teamOwner(name) {
+            const norm = normalizeTeam(name);
+            return TEAM_OWNER[norm] || 'Mike';  // anything unowned belongs to Mike via the Field
+        }
+        function isFieldTeam(name) {
+            return !TEAM_OWNER[normalizeTeam(name)];
         }
 
-        // Build greedy name-match for Golden Boot players
         const playerEntries = [];
         for (const [ownerName, owner] of Object.entries(OWNERS)) {
             for (const p of owner.players) {
@@ -866,15 +968,15 @@
         }
 
         // ── STATE ──
-        let teamOdds = {};         // teamNameLower -> probability (0-1) from Polymarket
-        let fixtures = [];         // ESPN match list
-        let groupsData = [];       // ESPN groups
-        let goalScorers = {};      // playerNameLower -> { goals, owner }
-        let openOwners = new Set(['Joe', 'Mike', 'Reed', 'Will', 'boot-Joe', 'boot-Mike', 'boot-Reed', 'boot-Will']);
+        let teamOdds = {};
+        let playerOdds = {};    // playerNameLower -> top-scorer probability
+        let fixtures = [];
+        let goalScorers = {};
+        let openOwners = new Set(['Joe','Mike','Reed','Will','boot-Joe','boot-Mike','boot-Reed','boot-Will']);
         const CACHE_KEY_ESPN = 'wcp_espn_2026';
         const CACHE_KEY_POLY = 'wcp_poly_2026';
+        const CACHE_KEY_BOOT = 'wcp_boot_2026';
 
-        // ── HELPERS ──
         function fmtPct(p) {
             if (p == null || isNaN(p)) return '--';
             const pct = p * 100;
@@ -883,18 +985,13 @@
             return pct.toFixed(0) + '%';
         }
         function fmtMoney(n) { return '$' + n.toString(); }
-        function colorClass(ownerName) {
-            const c = OWNERS[ownerName];
-            return c ? 'team-' + c.color : '';
-        }
-        function tagClass(ownerName) {
-            const c = OWNERS[ownerName];
-            return c ? 'tag-' + c.color : '';
-        }
+        function colorClass(o) { return OWNERS[o] ? 'team-' + OWNERS[o].color : ''; }
+        function tagClass(o) { return OWNERS[o] ? 'tag-' + OWNERS[o].color : ''; }
 
-        // ── ESPN FETCH ──
+        // ── DATA FETCH ──
         const ESPN_SCOREBOARD = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719';
-        const ESPN_STANDINGS = 'https://site.api.espn.com/apis/v2/sports/soccer/fifa.world/standings';
+        const POLY_WC_EVENT = 'https://gamma-api.polymarket.com/events?slug=world-cup-winner';
+        const POLY_BOOT_EVENT = 'https://gamma-api.polymarket.com/events?slug=world-cup-golden-boot-winner';
 
         async function fetchESPN() {
             try {
@@ -904,9 +1001,40 @@
                 try { localStorage.setItem(CACHE_KEY_ESPN, JSON.stringify({ ts: Date.now(), data: raw })); } catch(e) {}
                 return raw;
             } catch (e) {
-                console.warn('ESPN fetch failed, trying cache:', e);
                 try {
                     const c = JSON.parse(localStorage.getItem(CACHE_KEY_ESPN));
+                    if (c && c.data) return c.data;
+                } catch(_) {}
+                return null;
+            }
+        }
+
+        async function fetchPolymarket() {
+            try {
+                const resp = await fetch(POLY_WC_EVENT, { signal: AbortSignal.timeout(15000) });
+                if (!resp.ok) throw new Error('Polymarket ' + resp.status);
+                const raw = await resp.json();
+                try { localStorage.setItem(CACHE_KEY_POLY, JSON.stringify({ ts: Date.now(), data: raw })); } catch(e) {}
+                return raw;
+            } catch (e) {
+                try {
+                    const c = JSON.parse(localStorage.getItem(CACHE_KEY_POLY));
+                    if (c && c.data) return c.data;
+                } catch(_) {}
+                return null;
+            }
+        }
+
+        async function fetchPolymarketBoot() {
+            try {
+                const resp = await fetch(POLY_BOOT_EVENT, { signal: AbortSignal.timeout(15000) });
+                if (!resp.ok) throw new Error('Polymarket boot ' + resp.status);
+                const raw = await resp.json();
+                try { localStorage.setItem(CACHE_KEY_BOOT, JSON.stringify({ ts: Date.now(), data: raw })); } catch(e) {}
+                return raw;
+            } catch (e) {
+                try {
+                    const c = JSON.parse(localStorage.getItem(CACHE_KEY_BOOT));
                     if (c && c.data) return c.data;
                 } catch(_) {}
                 return null;
@@ -924,104 +1052,109 @@
                     const homeTeam = home.team || {};
                     const awayTeam = away.team || {};
                     const status = (comp.status && comp.status.type) || {};
+                    const homeName = homeTeam.displayName || homeTeam.name || '?';
+                    const awayName = awayTeam.displayName || awayTeam.name || '?';
                     return {
                         id: ev.id,
                         date: ev.date,
-                        name: ev.name || (homeTeam.displayName + ' vs ' + awayTeam.displayName),
-                        homeName: homeTeam.displayName || homeTeam.name || '?',
-                        awayName: awayTeam.displayName || awayTeam.name || '?',
+                        name: ev.name || (homeName + ' vs ' + awayName),
+                        homeName, awayName,
                         homeScore: home.score != null ? String(home.score) : '',
                         awayScore: away.score != null ? String(away.score) : '',
-                        homeOwner: teamOwner(homeTeam.displayName || ''),
-                        awayOwner: teamOwner(awayTeam.displayName || ''),
+                        homeOwner: teamOwner(homeName),
+                        awayOwner: teamOwner(awayName),
                         statusState: status.state || 'pre',
                         statusDetail: status.shortDetail || status.detail || '',
                         venue: (comp.venue && comp.venue.fullName) || '',
-                        odds: comp.odds || []
+                        odds: comp.odds || [],
+                        notes: comp.notes || []
                     };
                 } catch (e) { return null; }
             }).filter(Boolean);
         }
 
-        // ── POLYMARKET FETCH ──
-        const POLY_WC_EVENT = 'https://gamma-api.polymarket.com/events?slug=world-cup-winner';
-
-        async function fetchPolymarket() {
-            try {
-                const resp = await fetch(POLY_WC_EVENT, { signal: AbortSignal.timeout(15000) });
-                if (!resp.ok) throw new Error('Polymarket ' + resp.status);
-                const raw = await resp.json();
-                try { localStorage.setItem(CACHE_KEY_POLY, JSON.stringify({ ts: Date.now(), data: raw })); } catch(e) {}
-                return raw;
-            } catch (e) {
-                console.warn('Polymarket fetch failed, trying cache:', e);
-                try {
-                    const c = JSON.parse(localStorage.getItem(CACHE_KEY_POLY));
-                    if (c && c.data) return c.data;
-                } catch(_) {}
-                return null;
-            }
-        }
-
         function parsePolymarket(raw) {
-            // raw is an array of events; first is "World Cup Winner"
             const out = {};
             if (!raw || !raw[0]) return out;
             const markets = raw[0].markets || [];
             for (const m of markets) {
                 if (!m.active || m.closed) continue;
-                let prices;
+                let prices, outcomes;
                 try { prices = typeof m.outcomePrices === 'string' ? JSON.parse(m.outcomePrices) : m.outcomePrices; } catch(e) { continue; }
-                let outcomes;
                 try { outcomes = typeof m.outcomes === 'string' ? JSON.parse(m.outcomes) : m.outcomes; } catch(e) { continue; }
                 if (!prices || !outcomes) continue;
-                // Find "Yes" probability
                 const yesIdx = outcomes.findIndex(o => /yes/i.test(o));
                 if (yesIdx < 0) continue;
                 const yesPrice = parseFloat(prices[yesIdx]);
                 if (isNaN(yesPrice)) continue;
-                // Extract team name from question "Will X win the 2026 FIFA World Cup?"
-                const q = m.question || '';
-                const match = q.match(/^Will\s+(.+?)\s+win/i);
+                const match = (m.question || '').match(/^Will\s+(.+?)\s+win/i);
                 if (!match) continue;
-                const teamName = match[1].trim();
-                out[teamName.toLowerCase()] = yesPrice;
+                out[normalizeTeam(match[1].trim())] = yesPrice;
             }
             return out;
         }
 
-        // ── POOL ODDS CALC ──
-        function calcOwnerOdds(ownerName) {
-            const owner = OWNERS[ownerName];
-            if (!owner) return 0;
-            let total = 0;
-            let allKnown = 0;
-            // Sum probabilities of explicitly-owned teams
-            for (const t of owner.teams) {
-                if (t.isField) continue;
-                const lower = t.name.toLowerCase();
-                const prob = teamOdds[lower] || 0;
-                total += prob;
+        function parsePolymarketBoot(raw) {
+            const out = {};
+            if (!raw || !raw[0]) return out;
+            const markets = raw[0].markets || [];
+            for (const m of markets) {
+                if (!m.active || m.closed) continue;
+                let prices, outcomes;
+                try { prices = typeof m.outcomePrices === 'string' ? JSON.parse(m.outcomePrices) : m.outcomePrices; } catch(e) { continue; }
+                try { outcomes = typeof m.outcomes === 'string' ? JSON.parse(m.outcomes) : m.outcomes; } catch(e) { continue; }
+                if (!prices || !outcomes) continue;
+                const yesIdx = outcomes.findIndex(o => /yes/i.test(o));
+                if (yesIdx < 0) continue;
+                const yesPrice = parseFloat(prices[yesIdx]);
+                if (isNaN(yesPrice)) continue;
+                // "Will Lionel Messi be the top goalscorer at the 2026 FIFA World Cup?"
+                const match = (m.question || '').match(/^Will\s+(.+?)\s+be\s+the\s+top/i);
+                if (!match) continue;
+                const playerName = match[1].trim();
+                out[playerName.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')] = yesPrice;
             }
-            // For Mike: add the Field probability (any team not explicitly owned by Joe/Reed/Will)
-            if (owner.ownsField) {
-                let nonFieldOdds = 0;
-                for (const [oName, o] of Object.entries(OWNERS)) {
-                    if (oName === 'Mike') continue;
-                    for (const t of o.teams) {
-                        if (t.isField) continue;
-                        nonFieldOdds += teamOdds[t.name.toLowerCase()] || 0;
-                    }
+            return out;
+        }
+
+        // Look up a player's Golden Boot prob — try exact and search-term matches
+        function playerProb(player) {
+            const norm = player.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+            if (playerOdds[norm] != null) return playerOdds[norm];
+            // Try search terms (e.g. our roster's 'mbappe' against Polymarket's 'kylian mbappe')
+            for (const s of player.search) {
+                const sn = s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+                for (const [polyName, prob] of Object.entries(playerOdds)) {
+                    if (polyName.includes(sn)) return prob;
                 }
-                // Field = total prob mass MINUS named teams owned by others MINUS Mike's named teams
-                // i.e. Field = 1 - (everyone's named odds)
-                let allNamedOdds = nonFieldOdds;
+            }
+            return 0;
+        }
+
+        // ── ODDS CALC ──
+        function teamProb(teamName) {
+            return teamOdds[normalizeTeam(teamName)] || 0;
+        }
+        function sumAllNamedOdds() {
+            let s = 0;
+            for (const owner of Object.values(OWNERS)) {
                 for (const t of owner.teams) {
                     if (t.isField) continue;
-                    allNamedOdds += teamOdds[t.name.toLowerCase()] || 0;
+                    s += teamProb(t.name);
                 }
-                const fieldProb = Math.max(0, 1 - allNamedOdds);
-                total += fieldProb;
+            }
+            return s;
+        }
+        function fieldProb() {
+            return Math.max(0, 1 - sumAllNamedOdds());
+        }
+        function calcOwnerOdds(ownerName) {
+            const o = OWNERS[ownerName];
+            if (!o) return 0;
+            let total = 0;
+            for (const t of o.teams) {
+                if (t.isField) total += fieldProb();
+                else total += teamProb(t.name);
             }
             return total;
         }
@@ -1039,11 +1172,13 @@
                 const isOpen = openOwners.has(e.name);
                 const totalSpent = e.owner.teams.reduce((s, t) => s + t.cost, 0);
                 const teamRows = e.owner.teams.map(t => {
-                    const prob = t.isField ? Math.max(0, 1 - sumAllNamedOwnedOdds()) : (teamOdds[t.name.toLowerCase()] || 0);
+                    const prob = t.isField ? fieldProb() : teamProb(t.name);
+                    const onclick = t.isField ? '' : `onclick='showTeam(${JSON.stringify(t.name)}); event.stopPropagation();'`;
+                    const fieldCls = t.isField ? 'field-bucket' : '';
                     return `
-                        <div class="roster-row">
+                        <div class="roster-row ${fieldCls}" ${onclick}>
                             <div class="roster-flag">${t.flag || '⚽'}</div>
-                            <div class="roster-name">${t.name}</div>
+                            <div class="roster-name">${t.name}${t.isField ? ' (31 teams)' : ''}</div>
                             <div class="roster-cost">${fmtMoney(t.cost)}</div>
                             <div class="roster-stat">${fmtPct(prob)}</div>
                         </div>`;
@@ -1067,34 +1202,26 @@
             }).join('');
         }
 
-        function sumAllNamedOwnedOdds() {
-            let s = 0;
-            for (const owner of Object.values(OWNERS)) {
-                for (const t of owner.teams) {
-                    if (t.isField) continue;
-                    s += teamOdds[t.name.toLowerCase()] || 0;
-                }
-            }
-            return s;
-        }
-
         // ── RENDER: GOLDEN BOOT ──
         function renderGoldenBoot() {
             const el = document.getElementById('golden-boot');
             const entries = Object.entries(OWNERS).map(([name, o]) => {
                 const playerData = o.players.map(p => {
                     const goals = goalScorers[p.name.toLowerCase()] || 0;
-                    return { name: p.name, goals };
+                    const odds = playerProb(p);
+                    return { name: p.name, goals, odds };
                 });
-                playerData.sort((a, b) => b.goals - a.goals);
+                playerData.sort((a, b) => b.goals - a.goals || b.odds - a.odds);
                 const totalGoals = playerData.reduce((s, p) => s + p.goals, 0);
-                return { name, owner: o, players: playerData, totalGoals };
+                // Owner's combined boot probability = sum of his players' probabilities
+                const combinedOdds = playerData.reduce((s, p) => s + (p.odds || 0), 0);
+                return { name, owner: o, players: playerData, totalGoals, combinedOdds, topGoals: playerData[0] ? playerData[0].goals : 0 };
             });
-            // Find the leader (most goals from a single player) per owner
-            entries.forEach(e => {
-                e.topGoals = e.players[0] ? e.players[0].goals : 0;
-            });
-            entries.sort((a, b) => b.topGoals - a.topGoals || b.totalGoals - a.totalGoals);
+            // Sort: by goals if any scored, otherwise by combined boot odds
+            const anyGoals = entries.some(e => e.totalGoals > 0);
+            entries.sort((a, b) => anyGoals
+                ? (b.totalGoals - a.totalGoals || b.combinedOdds - a.combinedOdds)
+                : (b.combinedOdds - a.combinedOdds));
 
             el.innerHTML = entries.map((e, idx) => {
                 const rank = idx + 1;
@@ -1103,25 +1230,46 @@
                     <div class="roster-row">
                         <div class="roster-flag">⚽</div>
                         <div class="roster-name">${p.name}</div>
-                        <div class="roster-stat">${p.goals}</div>
+                        <div class="roster-cost">${p.goals} G</div>
+                        <div class="roster-stat">${fmtPct(p.odds)}</div>
                     </div>`).join('');
+                const statValue = anyGoals ? e.totalGoals : fmtPct(e.combinedOdds);
+                const statLabel = anyGoals ? 'Goals' : 'Win Odds';
                 return `
                     <div class="owner-card ${isOpen ? 'open' : ''}" id="boot-card-${e.name}">
                         <div class="owner-header" onclick="toggleOwner('boot-${e.name}')">
                             <div class="owner-rank rank-${rank}">${rank}</div>
                             <div class="owner-info">
                                 <div class="owner-name ${colorClass(e.name)}">${e.name}</div>
-                                <div class="owner-detail">Top scorer: ${e.players[0] ? e.players[0].name + ' (' + e.players[0].goals + ')' : '—'}</div>
+                                <div class="owner-detail">Top: ${e.players[0] ? e.players[0].name + ' (' + fmtPct(e.players[0].odds) + ')' : '—'}</div>
                             </div>
                             <div class="owner-stat">
-                                <div class="owner-stat-value ${colorClass(e.name)}">${e.totalGoals}</div>
-                                <div class="owner-stat-label">Goals</div>
+                                <div class="owner-stat-value ${colorClass(e.name)}">${statValue}</div>
+                                <div class="owner-stat-label">${statLabel}</div>
                             </div>
                             <span class="toggle-arrow">&#9660;</span>
                         </div>
                         <div class="owner-detail-panel">${playerRows}</div>
                     </div>`;
             }).join('');
+        }
+
+        function renderTopScorers() {
+            const el = document.getElementById('top-scorers');
+            const list = Object.entries(goalScorers)
+                .map(([name, goals]) => ({ name, goals }))
+                .sort((a, b) => b.goals - a.goals)
+                .slice(0, 20);
+            if (!list.length) {
+                el.innerHTML = '<div class="empty-msg">Goal scorers will appear here once matches begin.</div>';
+                return;
+            }
+            el.innerHTML = list.map((s, i) => `
+                <div class="scorer-row">
+                    <div class="scorer-rank">${i + 1}</div>
+                    <div class="scorer-name">${s.name}</div>
+                    <div class="scorer-goals">${s.goals}</div>
+                </div>`).join('');
         }
 
         function toggleOwner(key) {
@@ -1133,13 +1281,18 @@
         }
 
         // ── RENDER: FIXTURES ──
+        function teamTagHtml(name) {
+            const owner = teamOwner(name);
+            if (!owner) return '';
+            return `<span class="fixture-team-tag ${tagClass(owner)}" onclick='showOwner(${JSON.stringify(owner)}); event.stopPropagation();'>${owner}</span>`;
+        }
+
         function renderFixtures() {
             const el = document.getElementById('fixtures-list');
             if (!fixtures.length) {
-                el.innerHTML = '<div class="empty-msg">Tournament begins June 11. Fixtures will appear when ESPN publishes them.</div>';
+                el.innerHTML = '<div class="empty-msg">Tournament begins June 11. Fixtures will load when ESPN publishes them.</div>';
                 return;
             }
-            // Group by date
             const byDate = {};
             for (const f of fixtures) {
                 const d = f.date ? f.date.slice(0,10) : 'TBD';
@@ -1148,7 +1301,7 @@
             }
             const dates = Object.keys(byDate).sort();
             el.innerHTML = dates.map(d => {
-                const dateLabel = d === 'TBD' ? 'TBD' : new Date(d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                const dateLabel = d === 'TBD' ? 'TBD' : new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                 const rows = byDate[d].map(f => {
                     const isLive = f.statusState === 'in';
                     const isPost = f.statusState === 'post';
@@ -1157,22 +1310,18 @@
                         const dt = new Date(f.date);
                         status = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
                     }
-                    const homeTagged = f.homeOwner && f.homeOwner !== 'Mike-field';
-                    const awayTagged = f.awayOwner && f.awayOwner !== 'Mike-field';
-                    const homeTag = homeTagged ? `<span class="fixture-team-tag ${tagClass(f.homeOwner)}">${f.homeOwner}</span>` : '';
-                    const awayTag = awayTagged ? `<span class="fixture-team-tag ${tagClass(f.awayOwner)}">${f.awayOwner}</span>` : '';
                     const showScore = isPost || isLive;
                     return `
                         <div class="fixture-row" onclick='showMatch(${JSON.stringify(f.id)})'>
                             <div class="fixture-status ${isLive ? 'live' : ''}">${status || '&nbsp;'}</div>
                             <div class="fixture-teams">
                                 <div class="fixture-team-row">
-                                    <span class="fixture-team-name">${f.homeName}</span>
-                                    ${homeTag}
+                                    <span class="fixture-team-name" onclick='showTeam(${JSON.stringify(f.homeName)}); event.stopPropagation();'>${f.homeName}</span>
+                                    ${teamTagHtml(f.homeName)}
                                 </div>
                                 <div class="fixture-team-row">
-                                    <span class="fixture-team-name">${f.awayName}</span>
-                                    ${awayTag}
+                                    <span class="fixture-team-name" onclick='showTeam(${JSON.stringify(f.awayName)}); event.stopPropagation();'>${f.awayName}</span>
+                                    ${teamTagHtml(f.awayName)}
                                 </div>
                             </div>
                             <div class="fixture-score">${showScore ? (f.homeScore || '0') + '<br>' + (f.awayScore || '0') : ''}</div>
@@ -1186,32 +1335,70 @@
             }).join('');
         }
 
-        // ── RENDER: GROUPS ──
+        // ── RENDER: GROUPS (derived from fixtures since ESPN standings endpoint shape varies) ──
+        function deriveGroups() {
+            // Group letter is sometimes in event.notes; fall back to TBD groups
+            const groupMap = {};
+            for (const f of fixtures) {
+                let groupLetter = null;
+                for (const n of (f.notes || [])) {
+                    const m = (n.headline || n.type || '').match(/Group\s+([A-L])/i);
+                    if (m) { groupLetter = m[1].toUpperCase(); break; }
+                }
+                if (!groupLetter) continue;
+                if (!groupMap[groupLetter]) groupMap[groupLetter] = {};
+                for (const teamName of [f.homeName, f.awayName]) {
+                    if (!groupMap[groupLetter][teamName]) {
+                        groupMap[groupLetter][teamName] = { name: teamName, gp:0, w:0, d:0, l:0, gf:0, ga:0, pts:0 };
+                    }
+                }
+                // Tally only if game played
+                if (f.statusState === 'post') {
+                    const hs = parseInt(f.homeScore) || 0;
+                    const as = parseInt(f.awayScore) || 0;
+                    const home = groupMap[groupLetter][f.homeName];
+                    const away = groupMap[groupLetter][f.awayName];
+                    home.gp++; away.gp++;
+                    home.gf += hs; home.ga += as;
+                    away.gf += as; away.ga += hs;
+                    if (hs > as) { home.w++; home.pts += 3; away.l++; }
+                    else if (hs < as) { away.w++; away.pts += 3; home.l++; }
+                    else { home.d++; home.pts++; away.d++; away.pts++; }
+                }
+            }
+            return Object.entries(groupMap).sort((a,b) => a[0].localeCompare(b[0])).map(([letter, teams]) => {
+                const arr = Object.values(teams);
+                arr.forEach(t => t.gd = t.gf - t.ga);
+                arr.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+                return { letter, teams: arr };
+            });
+        }
+
         function renderGroups() {
             const el = document.getElementById('groups-list');
-            if (!groupsData.length) {
-                el.innerHTML = '<div class="empty-msg">Group standings will populate once the tournament begins (June 11).</div>';
+            const groups = deriveGroups();
+            if (!groups.length) {
+                el.innerHTML = '<div class="empty-msg">Group standings will populate once ESPN tags fixtures with group letters (around tournament start).</div>';
                 return;
             }
-            el.innerHTML = groupsData.map(g => {
-                const rows = (g.teams || []).map((t, idx) => {
+            el.innerHTML = groups.map(g => {
+                const rows = g.teams.map((t, idx) => {
                     const advancing = idx < 2;
                     const owner = teamOwner(t.name);
-                    const isOwned = owner !== 'Mike-field';
-                    const tag = isOwned ? `<span class="fixture-team-tag ${tagClass(owner)}">${owner}</span>` : '';
+                    const tag = `<span class="fixture-team-tag ${tagClass(owner)}">${owner}</span>`;
                     return `
-                        <div class="group-row ${advancing ? 'advancing' : ''}">
+                        <div class="group-row ${advancing ? 'advancing' : ''}" onclick='showTeam(${JSON.stringify(t.name)})'>
                             <div class="group-pos">${idx + 1}</div>
-                            <div class="group-team">${t.name} ${tag}</div>
-                            <div class="group-stat">${t.gp || 0}</div>
-                            <div class="group-stat">${t.gd >= 0 ? '+' + (t.gd||0) : (t.gd||0)}</div>
-                            <div class="group-pts">${t.pts || 0}</div>
+                            <div class="group-team"><span class="group-team-name">${t.name}</span> ${tag}</div>
+                            <div class="group-stat">${t.gp}</div>
+                            <div class="group-stat">${t.gd >= 0 ? '+' + t.gd : t.gd}</div>
+                            <div class="group-pts">${t.pts}</div>
                         </div>`;
                 }).join('');
                 return `
                     <div class="group-card">
                         <div class="group-header">
-                            <span class="team-label">Group ${g.name}</span>
+                            <span class="team-label">Group ${g.letter}</span>
                             <span>GP</span>
                             <span>GD</span>
                             <span>PTS</span>
@@ -1231,11 +1418,21 @@
                 { label: 'Semi-finals', count: 2 },
                 { label: 'Final', count: 1 }
             ];
+            // Get knockout fixtures (after group stage). For now, show TBD.
+            // ESPN's `notes` will include round name once group stage ends.
+            const ko = fixtures.filter(f => {
+                for (const n of (f.notes || [])) {
+                    const t = (n.headline || n.type || '').toLowerCase();
+                    if (t.includes('round of') || t.includes('quarter') || t.includes('semi') || t.includes('final')) return true;
+                }
+                return false;
+            });
+
             el.innerHTML = `
                 <div class="bracket-wrapper">
                     <div class="bracket-rounds">
                         ${rounds.map(r => {
-                            const matches = Array.from({length: r.count}, (_, i) => `
+                            const matches = Array.from({length: r.count}, () => `
                                 <div class="bracket-match">
                                     <div class="bracket-match-row tbd">TBD</div>
                                     <div class="bracket-match-row tbd">TBD</div>
@@ -1247,16 +1444,27 @@
                                 </div>`;
                         }).join('')}
                     </div>
-                </div>`;
+                </div>
+                ${ko.length === 0 ? '<div class="empty-msg" style="padding:14px;">Knockout matchups will appear once the group stage concludes.</div>' : ''}`;
         }
 
-        // ── MATCH MODAL ──
+        // ── MODALS ──
+        function openModal(title, sub, body) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-sub').innerHTML = sub || '';
+            document.getElementById('modal-body').innerHTML = body;
+            document.getElementById('modal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('modal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
         function showMatch(id) {
             const f = fixtures.find(x => x.id === id);
             if (!f) return;
-            document.getElementById('match-title').textContent = f.homeName + ' vs ' + f.awayName;
-            document.getElementById('match-sub').innerHTML = (f.venue || 'Venue TBD') + ' &middot; ' + (f.statusDetail || '');
-            const body = document.getElementById('match-body');
             const isPost = f.statusState === 'post';
             const isLive = f.statusState === 'in';
             const showScore = isPost || isLive;
@@ -1265,13 +1473,13 @@
             const oddsHtml = odds ? `
                 <div class="match-section">
                     <div class="match-section-title">Odds &middot; ${odds.provider ? odds.provider.displayName : ''}</div>
-                    ${odds.homeTeamOdds ? '<div class="match-info-row"><div class="match-info-label">' + f.homeName + '</div><div class="match-info-value">' + (odds.homeTeamOdds.moneyLine || '--') + '</div></div>' : ''}
-                    ${odds.drawOdds ? '<div class="match-info-row"><div class="match-info-label">Draw</div><div class="match-info-value">' + (odds.drawOdds.moneyLine || '--') + '</div></div>' : ''}
-                    ${odds.awayTeamOdds ? '<div class="match-info-row"><div class="match-info-label">' + f.awayName + '</div><div class="match-info-value">' + (odds.awayTeamOdds.moneyLine || '--') + '</div></div>' : ''}
+                    ${odds.homeTeamOdds && odds.homeTeamOdds.moneyLine != null ? '<div class="match-info-row"><div class="match-info-label">' + f.homeName + '</div><div class="match-info-value">' + odds.homeTeamOdds.moneyLine + '</div></div>' : ''}
+                    ${odds.drawOdds && odds.drawOdds.moneyLine != null ? '<div class="match-info-row"><div class="match-info-label">Draw</div><div class="match-info-value">' + odds.drawOdds.moneyLine + '</div></div>' : ''}
+                    ${odds.awayTeamOdds && odds.awayTeamOdds.moneyLine != null ? '<div class="match-info-row"><div class="match-info-label">' + f.awayName + '</div><div class="match-info-value">' + odds.awayTeamOdds.moneyLine + '</div></div>' : ''}
                     ${odds.overUnder ? '<div class="match-info-row"><div class="match-info-label">Total goals (O/U)</div><div class="match-info-value">' + odds.overUnder + '</div></div>' : ''}
                 </div>` : '';
 
-            body.innerHTML = `
+            const body = `
                 <div class="match-score-block">
                     ${showScore ? `<div class="match-score-main">${f.homeScore || 0} &ndash; ${f.awayScore || 0}</div>` : '<div class="match-score-main" style="font-size:20px;color:var(--text-mid);">Scheduled</div>'}
                     <div class="match-score-status">${f.statusDetail || ''}</div>
@@ -1280,49 +1488,106 @@
                     <div class="match-section-title">Match Info</div>
                     <div class="match-info-row"><div class="match-info-label">Date</div><div class="match-info-value">${f.date ? new Date(f.date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : 'TBD'}</div></div>
                     ${f.venue ? '<div class="match-info-row"><div class="match-info-label">Venue</div><div class="match-info-value">' + f.venue + '</div></div>' : ''}
-                    ${f.homeOwner !== 'Mike-field' ? '<div class="match-info-row"><div class="match-info-label">' + f.homeName + ' owned by</div><div class="match-info-value">' + f.homeOwner + '</div></div>' : ''}
-                    ${f.awayOwner !== 'Mike-field' ? '<div class="match-info-row"><div class="match-info-label">' + f.awayName + ' owned by</div><div class="match-info-value">' + f.awayOwner + '</div></div>' : ''}
+                    <div class="match-info-row"><div class="match-info-label">${f.homeName}</div><div class="match-info-value">${f.homeOwner}</div></div>
+                    <div class="match-info-row"><div class="match-info-label">${f.awayName}</div><div class="match-info-value">${f.awayOwner}</div></div>
                 </div>
                 ${oddsHtml}`;
-            document.getElementById('match-modal').classList.add('open');
-            document.body.style.overflow = 'hidden';
+
+            openModal(f.homeName + ' vs ' + f.awayName, (f.venue || 'Venue TBD') + ' &middot; ' + (f.statusDetail || ''), body);
         }
 
-        function closeMatch(event) {
-            if (event && event.target !== event.currentTarget) return;
-            document.getElementById('match-modal').classList.remove('open');
-            document.body.style.overflow = '';
+        function showTeam(teamName) {
+            const norm = normalizeTeam(teamName);
+            const owner = teamOwner(teamName);
+            const teamFixtures = fixtures.filter(f =>
+                normalizeTeam(f.homeName) === norm || normalizeTeam(f.awayName) === norm
+            ).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+            const ownerDef = OWNERS[owner];
+            const teamDef = ownerDef ? ownerDef.teams.find(t => normalizeTeam(t.name) === norm) : null;
+            const cost = teamDef ? fmtMoney(teamDef.cost) : (isFieldTeam(teamName) ? 'part of Mike\'s Field' : '—');
+            const prob = teamProb(teamName);
+
+            const matchesHtml = teamFixtures.map(f => {
+                const isPost = f.statusState === 'post';
+                const isLive = f.statusState === 'in';
+                const showScore = isPost || isLive;
+                const oppHome = normalizeTeam(f.homeName) === norm;
+                const opp = oppHome ? f.awayName : f.homeName;
+                const teamScore = oppHome ? f.homeScore : f.awayScore;
+                const oppScore = oppHome ? f.awayScore : f.homeScore;
+                const dt = f.date ? new Date(f.date) : null;
+                const dateStr = dt ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD';
+                let result = '';
+                if (isPost) {
+                    const tn = parseInt(teamScore)||0, on = parseInt(oppScore)||0;
+                    result = tn > on ? 'W' : (tn < on ? 'L' : 'D');
+                }
+                return `
+                    <div class="match-info-row">
+                        <div class="match-info-label">${dateStr} &middot; ${oppHome ? 'vs' : '@'} ${opp}</div>
+                        <div class="match-info-value">${showScore ? (teamScore||0) + '–' + (oppScore||0) + ' ' + result : (f.statusDetail || dt ? dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '')}</div>
+                    </div>`;
+            }).join('');
+
+            const body = `
+                <div class="match-section" style="margin-top:0;padding-top:0;border:none;">
+                    <div class="match-info-row"><div class="match-info-label">Owner</div><div class="match-info-value">${owner}</div></div>
+                    <div class="match-info-row"><div class="match-info-label">Auction cost</div><div class="match-info-value">${cost}</div></div>
+                    <div class="match-info-row"><div class="match-info-label">Championship odds</div><div class="match-info-value">${fmtPct(prob)}</div></div>
+                </div>
+                <div class="match-section">
+                    <div class="match-section-title">Fixtures</div>
+                    ${matchesHtml || '<div class="empty-msg">No matches found.</div>'}
+                </div>`;
+
+            openModal(teamName, owner + (isFieldTeam(teamName) ? ' (Field)' : ''), body);
+        }
+
+        function showOwner(ownerName) {
+            // Switch to games view & open that owner's pool card
+            switchView('games');
+            openOwners.add(ownerName);
+            renderPoolStandings();
+            setTimeout(() => {
+                const card = document.getElementById('pool-card-' + ownerName);
+                if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
         }
 
         // ── TABS ──
+        function switchView(name) {
+            document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+            document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === name + '-view'));
+        }
         document.addEventListener('click', e => {
-            if (e.target.classList.contains('tab-btn')) {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            if (e.target.classList.contains('main-tab-btn')) {
+                switchView(e.target.dataset.view);
+            } else if (e.target.classList.contains('sub-tab-btn')) {
+                document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
                 e.target.classList.add('active');
-                document.getElementById(e.target.dataset.tab + '-panel').classList.add('active');
+                document.getElementById(e.target.dataset.sub + '-panel').classList.add('active');
             }
         });
 
-        // ── MAIN FETCH ──
+        // ── MAIN ──
         async function fetchAll() {
             const spinner = document.getElementById('spinner');
             const refreshText = document.getElementById('refresh-text');
             spinner.style.display = 'inline-block';
             refreshText.textContent = 'Loading';
 
-            const [espnRaw, polyRaw] = await Promise.all([fetchESPN(), fetchPolymarket()]);
+            const [espnRaw, polyRaw, bootRaw] = await Promise.all([
+                fetchESPN(), fetchPolymarket(), fetchPolymarketBoot()
+            ]);
+            if (espnRaw) fixtures = parseFixtures(espnRaw);
+            if (polyRaw) teamOdds = parsePolymarket(polyRaw);
+            if (bootRaw) playerOdds = parsePolymarketBoot(bootRaw);
 
-            if (espnRaw) {
-                fixtures = parseFixtures(espnRaw);
-            }
-            if (polyRaw) {
-                teamOdds = parsePolymarket(polyRaw);
-            }
-
-            // Render
             renderPoolStandings();
             renderGoldenBoot();
+            renderTopScorers();
             renderFixtures();
             renderGroups();
             renderBracket();
@@ -1330,7 +1595,7 @@
             const banner = document.getElementById('status-banner');
             if (!espnRaw && !polyRaw) {
                 banner.className = 'status-banner';
-                banner.textContent = 'Live data unavailable — showing placeholder content';
+                banner.textContent = 'Live data unavailable';
             } else if (!fixtures.length) {
                 banner.className = 'status-banner';
                 banner.textContent = 'Preview Mode — Tournament begins June 11, 2026';
@@ -1345,16 +1610,12 @@
             refreshText.textContent = 'Refresh';
         }
 
-        // ── INIT ──
+        // INIT
         fetchAll();
         let refreshInterval = setInterval(fetchAll, 60000);
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                clearInterval(refreshInterval);
-            } else {
-                fetchAll();
-                refreshInterval = setInterval(fetchAll, 60000);
-            }
+            if (document.hidden) clearInterval(refreshInterval);
+            else { fetchAll(); refreshInterval = setInterval(fetchAll, 60000); }
         });
     </script>
 </body>
