@@ -1190,6 +1190,7 @@
                         statusState: status.state || 'pre',
                         statusDetail: status.shortDetail || status.detail || '',
                         venue: (comp.venue && comp.venue.fullName) || '',
+                        venueCity: (comp.venue && comp.venue.address && comp.venue.address.city) || '',
                         odds: comp.odds || [],
                         notes: comp.notes || []
                     };
@@ -1467,8 +1468,8 @@
                     let status = f.statusDetail || '';
                     if (!isPost && !isLive && f.date) status = fmtTimeCT(f.date);
                     const showScore = isPost || isLive;
-                    // Shorter venue label for the row (city if available, otherwise full)
-                    const venueShort = (f.venue || '').split(',')[0].replace(/\s*Stadium.*$/i, '').replace(/MetLife.*/, 'MetLife').trim();
+                    // Show city only (strip state suffix: "Inglewood, California" -> "Inglewood")
+                    const venueShort = (f.venueCity || '').split(',')[0].trim();
                     const homeOut = eliminatedTeams.has(normalizeTeam(f.homeName)) ? 'team-eliminated' : '';
                     const awayOut = eliminatedTeams.has(normalizeTeam(f.awayName)) ? 'team-eliminated' : '';
                     return `
