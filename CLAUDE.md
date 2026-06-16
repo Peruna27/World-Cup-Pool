@@ -87,13 +87,18 @@ The 100% across all 4 owners must sum to 1 (any team must win). If Polymarket pr
 
 ## Team Name Aliases
 
-Polymarket and ESPN sometimes disagree on country names. Known aliases (case-insensitive):
-- `United States` ↔ `USA`
-- `South Korea` ↔ `Korea Republic`
-- `Czechia` ↔ `Czech Republic`
-- `Côte d'Ivoire` ↔ `Ivory Coast`
+Polymarket and ESPN sometimes disagree on country names. Each team must resolve to **one canonical name** (the spelling in `GROUPS` / owner rosters) via `TEAM_ALIASES`. `displayTeam()` then renders that one name everywhere so the same team never appears under two spellings.
 
-Always normalize names through `name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')` to handle accents (e.g. `Ousmane Dembélé` ↔ `dembele`).
+**Confirmed from the live ESPN feed (2026-06-16), these are the spellings ESPN actually sends that differ from our canonical:**
+- `Türkiye` → **Turkey**  ← the one that broke group standings; FIFA renamed Turkey in 2022
+- `Bosnia-Herzegovina` → **Bosnia and Herzegovina**
+- `United States` → **USA**
+- `Czechia` → **Czech Republic**
+- `Congo DR` → **DR Congo**
+
+Other aliases (`Korea Republic`, `IR Iran`, `Cabo Verde`, `Côte d'Ivoire`) are safety nets — ESPN currently sends the canonical form directly, but Polymarket/FIFA may not.
+
+Always normalize names through `name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')` to handle accents (e.g. `Ousmane Dembélé` ↔ `dembele`). **`TEAM_ALIASES` keys must be lowercase + accent-stripped** — `normalizeTeam()` strips accents *before* the lookup, so an accented key (e.g. `côte d'ivoire`) can never match and is dead code.
 
 ---
 
@@ -138,4 +143,5 @@ Single-page app, mobile-first:
 - **Browser concurrent connection limit**: Don't fire 100+ per-event status requests in parallel. Batch in 6–8 (same lesson from Golf-League's tee-time fetch).
 - **Bracket structure**: 2026 World Cup uses a Round of 32 (new for 48-team format). Don't assume Round of 16 is the start of knockouts.
 - **Names with accents**: always `normalize('NFD').replace(/[̀-ͯ]/g, '')` before matching.
+- **One bad team name silently breaks a whole group**: `deriveGroups()` only tallies a finished fixture when BOTH names match a group row (`if (!home || !away) continue`). An unmatched name drops the entire game, so the team *and its opponents* lose those points. Sanity check: `sum of all teams' GP` must equal `2 × (completed group games)`. If it doesn't, a name isn't matching — add it to `TEAM_ALIASES`. (This is exactly how `Türkiye` broke Group D.)
 - **Mike owns the Field**: his card must show the Field as a "team" with its computed probability. Don't omit it just because it's synthetic.

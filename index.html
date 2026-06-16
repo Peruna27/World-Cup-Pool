@@ -971,11 +971,37 @@
                 TEAM_OWNER[t.name.toLowerCase()] = ownerName;
             }
         }
+        // The canonical name for each team is the spelling used in GROUPS / the owner rosters.
+        // ESPN, FIFA, and Polymarket each spell some countries differently, so every known
+        // variant is mapped to its canonical here. Keys MUST be lowercase + accent-stripped,
+        // because normalizeTeam() strips accents BEFORE doing this lookup — an accented key
+        // (e.g. 'côte d'ivoire') can never match and is dead.
         const TEAM_ALIASES = {
-            'united states': 'usa', 'u.s.a.': 'usa', 'united states of america': 'usa',
-            'korea republic': 'south korea', 'rep. of korea': 'south korea',
+            // USA  (ESPN short form is "USA"; FIFA long form is "United States")
+            'united states': 'usa', 'united states of america': 'usa', 'u.s.a.': 'usa',
+            // South Korea  (FIFA: "Korea Republic")
+            'korea republic': 'south korea', 'republic of korea': 'south korea',
+            'rep. of korea': 'south korea', 'korea, republic of': 'south korea',
+            // Czech Republic  (FIFA/ESPN: "Czechia")
             'czechia': 'czech republic',
-            'côte d\'ivoire': 'ivory coast', 'cote d\'ivoire': 'ivory coast'
+            // Ivory Coast  (FIFA: "Côte d'Ivoire" — straight and curly apostrophe variants)
+            'cote d\'ivoire': 'ivory coast', 'cote d’ivoire': 'ivory coast',
+            // Turkey  (FIFA/ESPN: "Türkiye" -> stripped to "turkiye")
+            'turkiye': 'turkey',
+            // Bosnia and Herzegovina
+            'bosnia & herzegovina': 'bosnia and herzegovina',
+            'bosnia-herzegovina': 'bosnia and herzegovina',
+            'bosnia herzegovina': 'bosnia and herzegovina',
+            'bosnia': 'bosnia and herzegovina',
+            // Iran  (FIFA: "IR Iran")
+            'ir iran': 'iran',
+            // Cape Verde  (FIFA: "Cabo Verde")
+            'cabo verde': 'cape verde',
+            // DR Congo  (FIFA: "Congo DR")
+            'congo dr': 'dr congo', 'dr. congo': 'dr congo', 'congo-kinshasa': 'dr congo',
+            'democratic republic of the congo': 'dr congo',
+            'democratic republic of congo': 'dr congo',
+            'congo democratic republic': 'dr congo'
         };
         function normalizeTeam(name) {
             const lower = (name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -1012,7 +1038,7 @@
             A: ['Mexico', 'South Africa', 'South Korea', 'Czech Republic'],
             B: ['Canada', 'Bosnia and Herzegovina', 'Qatar', 'Switzerland'],
             C: ['Brazil', 'Morocco', 'Haiti', 'Scotland'],
-            D: ['United States', 'Paraguay', 'Australia', 'Turkey'],
+            D: ['USA', 'Paraguay', 'Australia', 'Turkey'],
             E: ['Germany', 'Curaçao', 'Ivory Coast', 'Ecuador'],
             F: ['Netherlands', 'Japan', 'Sweden', 'Tunisia'],
             G: ['Belgium', 'Egypt', 'Iran', 'New Zealand'],
@@ -1022,6 +1048,17 @@
             K: ['Portugal', 'DR Congo', 'Uzbekistan', 'Colombia'],
             L: ['England', 'Croatia', 'Ghana', 'Panama']
         };
+
+        // One canonical display name per team (taken from the draw above) so a team shows the
+        // SAME name everywhere — fixtures, group tables, match cards — no matter which spelling
+        // ESPN sends. Any name not in the draw (e.g. knockout placeholders) is shown as-is.
+        const TEAM_DISPLAY = {};
+        for (const teams of Object.values(GROUPS)) {
+            for (const n of teams) TEAM_DISPLAY[normalizeTeam(n)] = n;
+        }
+        function displayTeam(name) {
+            return TEAM_DISPLAY[normalizeTeam(name)] || name;
+        }
 
         // FIFA 2026 official venue names (commercial sponsors stripped).
         // Keyed by ESPN's venue.fullName.
@@ -1526,11 +1563,11 @@
                             </div>
                             <div class="fixture-teams">
                                 <div class="fixture-team-row ${homeOut}">
-                                    <span class="fixture-team-name" onclick='showTeam(${JSON.stringify(f.homeName)}); event.stopPropagation();'>${f.homeName}</span>
+                                    <span class="fixture-team-name" onclick='showTeam(${JSON.stringify(f.homeName)}); event.stopPropagation();'>${displayTeam(f.homeName)}</span>
                                     ${teamTagHtml(f.homeName)}
                                 </div>
                                 <div class="fixture-team-row ${awayOut}">
-                                    <span class="fixture-team-name" onclick='showTeam(${JSON.stringify(f.awayName)}); event.stopPropagation();'>${f.awayName}</span>
+                                    <span class="fixture-team-name" onclick='showTeam(${JSON.stringify(f.awayName)}); event.stopPropagation();'>${displayTeam(f.awayName)}</span>
                                     ${teamTagHtml(f.awayName)}
                                 </div>
                             </div>
@@ -1692,9 +1729,9 @@
             const oddsHtml = odds ? `
                 <div class="match-section">
                     <div class="match-section-title">Odds &middot; ${odds.provider ? odds.provider.displayName : ''}</div>
-                    ${odds.homeTeamOdds && odds.homeTeamOdds.moneyLine != null ? '<div class="match-info-row"><div class="match-info-label">' + f.homeName + '</div><div class="match-info-value">' + odds.homeTeamOdds.moneyLine + '</div></div>' : ''}
+                    ${odds.homeTeamOdds && odds.homeTeamOdds.moneyLine != null ? '<div class="match-info-row"><div class="match-info-label">' + displayTeam(f.homeName) + '</div><div class="match-info-value">' + odds.homeTeamOdds.moneyLine + '</div></div>' : ''}
                     ${odds.drawOdds && odds.drawOdds.moneyLine != null ? '<div class="match-info-row"><div class="match-info-label">Draw</div><div class="match-info-value">' + odds.drawOdds.moneyLine + '</div></div>' : ''}
-                    ${odds.awayTeamOdds && odds.awayTeamOdds.moneyLine != null ? '<div class="match-info-row"><div class="match-info-label">' + f.awayName + '</div><div class="match-info-value">' + odds.awayTeamOdds.moneyLine + '</div></div>' : ''}
+                    ${odds.awayTeamOdds && odds.awayTeamOdds.moneyLine != null ? '<div class="match-info-row"><div class="match-info-label">' + displayTeam(f.awayName) + '</div><div class="match-info-value">' + odds.awayTeamOdds.moneyLine + '</div></div>' : ''}
                     ${odds.overUnder ? '<div class="match-info-row"><div class="match-info-label">Total goals (O/U)</div><div class="match-info-value">' + odds.overUnder + '</div></div>' : ''}
                 </div>` : '';
 
@@ -1707,12 +1744,12 @@
                     <div class="match-section-title">Match Info</div>
                     <div class="match-info-row"><div class="match-info-label">Date</div><div class="match-info-value">${fmtDateTimeCT(f.date)}</div></div>
                     ${fifaCity(f) ? '<div class="match-info-row"><div class="match-info-label">Host city</div><div class="match-info-value">' + fifaCity(f) + '</div></div>' : ''}
-                    <div class="match-info-row"><div class="match-info-label">${f.homeName}</div><div class="match-info-value">${f.homeOwner}</div></div>
-                    <div class="match-info-row"><div class="match-info-label">${f.awayName}</div><div class="match-info-value">${f.awayOwner}</div></div>
+                    <div class="match-info-row"><div class="match-info-label">${displayTeam(f.homeName)}</div><div class="match-info-value">${f.homeOwner}</div></div>
+                    <div class="match-info-row"><div class="match-info-label">${displayTeam(f.awayName)}</div><div class="match-info-value">${f.awayOwner}</div></div>
                 </div>
                 ${oddsHtml}`;
 
-            openModal(f.homeName + ' vs ' + f.awayName, (fifaCity(f) || 'Host TBD') + ' &middot; ' + (f.statusDetail || ''), body);
+            openModal(displayTeam(f.homeName) + ' vs ' + displayTeam(f.awayName), (fifaCity(f) || 'Host TBD') + ' &middot; ' + (f.statusDetail || ''), body);
         }
 
         function showTeam(teamName) {
@@ -1743,7 +1780,7 @@
                 }
                 return `
                     <div class="match-info-row">
-                        <div class="match-info-label">${dateStr} &middot; ${oppHome ? 'vs' : '@'} ${opp}</div>
+                        <div class="match-info-label">${dateStr} &middot; ${oppHome ? 'vs' : '@'} ${displayTeam(opp)}</div>
                         <div class="match-info-value">${showScore ? (teamScore||0) + '–' + (oppScore||0) + ' ' + result : (f.statusDetail || fmtTimeCT(f.date))}</div>
                     </div>`;
             }).join('');
@@ -1759,7 +1796,7 @@
                     ${matchesHtml || '<div class="empty-msg">No matches found.</div>'}
                 </div>`;
 
-            openModal(teamName, owner + (isFieldTeam(teamName) ? ' (Field)' : ''), body);
+            openModal(displayTeam(teamName), owner + (isFieldTeam(teamName) ? ' (Field)' : ''), body);
         }
 
         function showOwner(ownerName) {
