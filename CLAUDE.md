@@ -57,6 +57,7 @@ Returns ~100 events. Each event has:
 - `competitions[0].status.type` with `state` (`pre`/`in`/`post`), `shortDetail` (e.g. "FT", "85'", "Half")
 - `competitions[0].odds[]` with DraftKings moneyline + over/under per game
 - `competitions[0].venue.fullName`
+- `competitions[0].details[]` = scoring/card plays. Goals have `scoringPlay: true` and the scorer in `athletesInvolved[0]` (only the scorer — no assists). **Golden Boot tally must exclude `ownGoal` and `shootout`** (own goals aren't credited; shootout pens don't count); in-match `penaltyKick` goals DO count. This feeds `goalScorers` (roster tally) + `goalLeaders` (all scorers) — `goalScorers` is keyed by roster player name via `matchPlayer()`, so it stays empty unless `parseGoalScorers()` actually runs in `fetchAll`.
 
 Group standings:
 ```
@@ -69,7 +70,7 @@ The "World Cup Winner" event at `gamma-api.polymarket.com/events?slug=world-cup-
 
 Parse the team name out of the question with `/^Will\s+(.+?)\s+win/i` and aggregate per owner.
 
-**Golden Boot odds aren't on Polymarket yet** (the event hasn't been listed). For now we just track live goal counts. If markets appear closer to the tournament, plug them in similarly.
+**Golden Boot odds ARE now live on Polymarket** at `gamma-api.polymarket.com/events?slug=world-cup-golden-boot-winner` (~80 markets like *"Will Lionel Messi be the top scorer..."*). Parsed by `parsePolymarketBoot` with `/^Will\s+(.+?)\s+be\s+the\s+top/i` into `playerOdds` + `playerOddsList`. Boot cards show **both** live goal counts (from ESPN `details`) and these odds; Top Scorers shows live goals once any are scored, else falls back to these odds pre-tournament.
 
 ### Owner odds calculation
 

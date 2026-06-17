@@ -270,6 +270,9 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .owner-stat { text-align: right; }
@@ -1131,7 +1134,8 @@
         let teamOdds = {};
         let playerOdds = {};    // playerNameLower -> top-scorer probability
         let fixtures = [];
-        let goalScorers = {};
+        let goalScorers = {};   // roster player name (lowercased) -> goals, for the Golden Boot cards
+        let goalLeaders = [];   // [{name, goals}] every scorer, sorted desc, for the Top Scorers list
         let eliminatedTeams = new Set();  // normalized team names that are out of the tournament
         let openOwners = new Set(['Joe','Mike','Reed','Will','boot-Joe','boot-Mike','boot-Reed','boot-Will']);
         const CACHE_KEY_ESPN = 'wcp_espn_2026';
@@ -1262,6 +1266,32 @@
                     };
                 } catch (e) { return null; }
             }).filter(Boolean);
+        }
+
+        // Tally goal scorers from ESPN scoring plays. Own goals and shootout penalties
+        // do NOT count toward the Golden Boot; in-match penalties do. Each goal detail
+        // lists exactly the scorer in athletesInvolved[0] (verified — no assists mixed in).
+        function parseGoalScorers(raw) {
+            const leaders = {};   // displayNameLower -> { name, goals }
+            const roster = {};    // roster player name (lowercased) -> goals
+            if (raw && raw.events) {
+                for (const ev of raw.events) {
+                    const comp = (ev.competitions && ev.competitions[0]) || {};
+                    for (const d of (comp.details || [])) {
+                        if (!d.scoringPlay || d.ownGoal || d.shootout) continue;
+                        const a = (d.athletesInvolved || [])[0];
+                        const name = a && (a.displayName || a.fullName || a.shortName);
+                        if (!name) continue;
+                        (leaders[name.toLowerCase()] = leaders[name.toLowerCase()] || { name, goals: 0 }).goals++;
+                        const m = matchPlayer(name);
+                        if (m) {
+                            const rk = m.playerDef.name.toLowerCase();
+                            roster[rk] = (roster[rk] || 0) + 1;
+                        }
+                    }
+                }
+            }
+            return { roster, leaders: Object.values(leaders).sort((a, b) => b.goals - a.goals) };
         }
 
         function parsePolymarket(raw) {
@@ -1462,19 +1492,22 @@
                         <div class="roster-cost">${p.goals} G</div>
                         <div class="roster-stat">${fmtPct(p.odds)}</div>
                     </div>`).join('');
-                const statValue = anyGoals ? e.totalGoals : fmtPct(e.combinedOdds);
-                const statLabel = anyGoals ? 'Goals' : 'Win Odds';
+                const top = e.players[0];
                 return `
                     <div class="owner-card ${isOpen ? 'open' : ''}" id="boot-card-${e.name}">
                         <div class="owner-header" onclick="toggleOwner('boot-${e.name}')">
                             <div class="owner-rank rank-${rank}">${rank}</div>
                             <div class="owner-info">
                                 <div class="owner-name ${colorClass(e.name)}">${e.name}</div>
-                                <div class="owner-detail">Top: ${e.players[0] ? e.players[0].name + ' (' + fmtPct(e.players[0].odds) + ')' : '—'}</div>
+                                <div class="owner-detail">Top: ${top ? top.name + ' · ' + top.goals + 'G · ' + fmtPct(top.odds) : '—'}</div>
                             </div>
                             <div class="owner-stat">
-                                <div class="owner-stat-value ${colorClass(e.name)}">${statValue}</div>
-                                <div class="owner-stat-label">${statLabel}</div>
+                                <div class="owner-stat-value ${colorClass(e.name)}">${e.totalGoals}</div>
+                                <div class="owner-stat-label">Goals</div>
+                            </div>
+                            <div class="owner-stat" style="margin-left:14px;">
+                                <div class="owner-stat-value ${colorClass(e.name)}">${fmtPct(e.combinedOdds)}</div>
+                                <div class="owner-stat-label">Odds</div>
                             </div>
                             <span class="toggle-arrow">&#9660;</span>
                         </div>
@@ -1486,9 +1519,7 @@
         function renderTopScorers() {
             const el = document.getElementById('top-scorers');
             // Once goals are scored, show live goal leaders. Pre-tournament: top 20 Polymarket odds.
-            const liveList = Object.entries(goalScorers)
-                .map(([name, goals]) => ({ name, goals }))
-                .sort((a, b) => b.goals - a.goals);
+            const liveList = goalLeaders;
             const useLive = liveList.length > 0;
             const list = useLive ? liveList.slice(0, 20) : playerOddsList.slice(0, 20);
             if (!list.length) {
@@ -1839,6 +1870,9 @@
             if (espnRaw) {
                 fixtures = parseFixtures(espnRaw);
                 eliminatedTeams = computeEliminated();
+                const scorers = parseGoalScorers(espnRaw);
+                goalScorers = scorers.roster;
+                goalLeaders = scorers.leaders;
             }
             if (polyRaw) teamOdds = parsePolymarket(polyRaw);
             if (bootRaw) playerOdds = parsePolymarketBoot(bootRaw);
