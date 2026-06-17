@@ -1471,16 +1471,13 @@
                     return { name: p.name, goals, odds };
                 });
                 playerData.sort((a, b) => b.goals - a.goals || b.odds - a.odds);
-                const totalGoals = playerData.reduce((s, p) => s + p.goals, 0);
                 // Owner's combined boot probability = sum of his players' probabilities
                 const combinedOdds = playerData.reduce((s, p) => s + (p.odds || 0), 0);
-                return { name, owner: o, players: playerData, totalGoals, combinedOdds, topGoals: playerData[0] ? playerData[0].goals : 0 };
+                return { name, owner: o, players: playerData, combinedOdds, topGoals: playerData[0] ? playerData[0].goals : 0 };
             });
-            // Sort: by goals if any scored, otherwise by combined boot odds
-            const anyGoals = entries.some(e => e.totalGoals > 0);
-            entries.sort((a, b) => anyGoals
-                ? (b.totalGoals - a.totalGoals || b.combinedOdds - a.combinedOdds)
-                : (b.combinedOdds - a.combinedOdds));
+            // The boot pool is won by owning the single top scorer (we don't sum an owner's
+            // goals). Rank by each owner's leading scorer's goals, then by combined boot odds.
+            entries.sort((a, b) => b.topGoals - a.topGoals || b.combinedOdds - a.combinedOdds);
 
             el.innerHTML = entries.map((e, idx) => {
                 const rank = idx + 1;
@@ -1502,12 +1499,8 @@
                                 <div class="owner-detail">Top: ${top ? top.name + ' · ' + top.goals + 'G · ' + fmtPct(top.odds) : '—'}</div>
                             </div>
                             <div class="owner-stat">
-                                <div class="owner-stat-value ${colorClass(e.name)}">${e.totalGoals}</div>
-                                <div class="owner-stat-label">Goals</div>
-                            </div>
-                            <div class="owner-stat" style="margin-left:14px;">
                                 <div class="owner-stat-value ${colorClass(e.name)}">${fmtPct(e.combinedOdds)}</div>
-                                <div class="owner-stat-label">Odds</div>
+                                <div class="owner-stat-label">Boot Odds</div>
                             </div>
                             <span class="toggle-arrow">&#9660;</span>
                         </div>
