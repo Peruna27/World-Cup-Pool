@@ -590,7 +590,7 @@
         .bracket-round {
             display: flex;
             flex-direction: column;
-            min-width: 128px;
+            min-width: 150px;
         }
         .bracket-round-label {
             font-family: 'DM Sans', sans-serif;
@@ -614,15 +614,17 @@
             flex-direction: column;
             justify-content: center;
             position: relative;
-            min-height: 48px;
+            min-height: 64px;          /* must exceed the box height (incl. a 2-line name) so boxes never overlap */
+            padding: 3px 0;
         }
         .bracket-match {
             width: 100%;
-            border: 1px solid var(--border-light);
+            border: 1px solid var(--border);
             border-radius: 4px;
             background: #fff;
             cursor: pointer;
             position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
         }
         .bracket-match:active { background: var(--cream-light); }
         /* connector — horizontal stub out the RIGHT of every slot that has a next round */
@@ -645,29 +647,23 @@
             height: 50%;
             border-left: 2px solid var(--border);
         }
-        .bracket-match-num {
-            position: absolute;
-            top: -7px;
-            left: 6px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 8px;
-            font-weight: 700;
-            color: var(--text-light);
-            background: #fff;
-            padding: 0 4px;
-            letter-spacing: 0.5px;
-            z-index: 1;
-        }
         .bracket-match-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 6px 8px;
+            gap: 4px;
+            padding: 5px 8px;
             font-family: 'Source Serif 4', serif;
             font-weight: 700;
-            font-size: 11px;
+            font-size: 10.5px;
+            line-height: 1.15;
             text-transform: uppercase;
         }
+        .bracket-match-row .bt-name {
+            flex: 1 1 auto;
+            min-width: 0;          /* long names wrap to a 2nd line instead of truncating */
+        }
+        .bracket-match-row .fixture-team-tag { flex-shrink: 0; }
         .bracket-match-row + .bracket-match-row {
             border-top: 1px solid var(--border-light);
         }
@@ -1732,16 +1728,15 @@
         }
         function bracketSideHtml(name) {
             if (isBracketPlaceholder(name)) {
-                return `<div class="bracket-match-row tbd">${prettyPlaceholder(name)}</div>`;
+                return `<div class="bracket-match-row tbd"><span class="bt-name">${prettyPlaceholder(name)}</span></div>`;
             }
             const out = eliminatedTeams.has(normalizeTeam(name)) ? 'team-eliminated' : '';
-            return `<div class="bracket-match-row ${out}">${displayTeam(name)}${teamTagHtml(name)}</div>`;
+            return `<div class="bracket-match-row ${out}"><span class="bt-name">${displayTeam(name)}</span>${teamTagHtml(name)}</div>`;
         }
 
         function bracketMatchBox(f) {
             return `
                 <div class="bracket-match" onclick='showMatch(${JSON.stringify(f.id)})'>
-                    <div class="bracket-match-num">${f.date ? fmtDateCT(f.date, { month: 'short', day: 'numeric' }) : ''}</div>
                     ${bracketSideHtml(f.homeName)}
                     ${bracketSideHtml(f.awayName)}
                 </div>`;
