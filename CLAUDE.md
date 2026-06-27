@@ -49,11 +49,14 @@ A mobile-first fantasy tracker for the 2026 FIFA World Cup auction pool with 4 f
 ### ESPN (fixtures, scores, group standings, per-match odds)
 
 ```
-GET https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719
+GET https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=300
 ```
 
-Returns ~100 events. Each event has:
+**`&limit=300` is required** — the default caps at 100 events and silently drops the last 4 (both semis, 3rd-place, final). With it you get all 104.
+
+Returns 104 events. Each event has:
 - `competitions[0].competitors[]` with `team.displayName`, `score`, `homeAway`
+- `season.slug` = the round: `group-stage`, `round-of-32`, `round-of-16`, `quarterfinals`, `semifinals`, `3rd-place-match`, `final`. **The bracket reads straight from this** — ESPN fills in resolved knockout teams itself (all seeding + best-third-place math), so we do NO bracket calculation. Undecided slots arrive as placeholder names (`"Group L Winner"`, `"Third Place Group E/H/I/J/K"`, `"Round of 32 1 Winner"`, `"Semifinal 1 Loser"`).
 - `competitions[0].status.type` with `state` (`pre`/`in`/`post`), `shortDetail` (e.g. "FT", "85'", "Half")
 - `competitions[0].odds[]` with DraftKings moneyline + over/under per game
 - `competitions[0].venue.fullName`
@@ -111,9 +114,9 @@ Single-page app, mobile-first:
 2. **Pool Standings** — 4 owner cards sorted by current win probability. Tap to expand and see each owner's teams with their individual probabilities + cost paid.
 3. **Golden Boot** — 4 owner cards sorted by their leading player's goal count. Tap to expand and see all 5 players + goal counts.
 4. **Tabs**: Fixtures · Groups · Bracket
-   - **Fixtures**: all 100 games grouped by date, click any row to open match details. Pool teams get color tags.
+   - **Fixtures**: all 104 games grouped by date, click any row to open match details. Pool teams get color tags.
    - **Groups**: 12 group tables, top 2 highlighted (advance directly to R32).
-   - **Bracket**: 32-team knockout view. Empty pre-tournament; fills in once group stage ends.
+   - **Bracket**: R32 → Final, rendered straight from ESPN's per-round fixtures (`season.slug`). Each slot shows the resolved team (with owner tag) once ESPN locks it, otherwise ESPN's placeholder label. Each match box is clickable. No bracket math on our side.
 5. **Match modal** — tap a fixture row for score, time, venue, owner tags, and per-game odds.
 
 ---

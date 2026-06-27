@@ -1087,47 +1087,20 @@
             'Estadio Guadalajara': 'Guadalajara'
         };
 
-        // ── BRACKET (R32 → Final, per FIFA 2026 published structure) ──
-        const BRACKET_R32 = [
-            { m: 73, home: '2A', away: '2B' },
-            { m: 74, home: '1E', away: '3(A/B/C/D/F)' },
-            { m: 75, home: '1F', away: '2C' },
-            { m: 76, home: '1C', away: '2F' },
-            { m: 77, home: '1I', away: '3(C/D/F/G/H)' },
-            { m: 78, home: '2E', away: '2I' },
-            { m: 79, home: '1A', away: '3(C/E/F/H/I)' },
-            { m: 80, home: '1L', away: '3(E/H/I/J/K)' },
-            { m: 81, home: '1D', away: '3(B/E/F/I/J)' },
-            { m: 82, home: '1G', away: '3(A/E/H/I/J)' },
-            { m: 83, home: '2K', away: '2L' },
-            { m: 84, home: '1H', away: '2J' },
-            { m: 85, home: '1B', away: '3(E/F/G/I/J)' },
-            { m: 86, home: '1J', away: '2H' },
-            { m: 87, home: '1K', away: '3(D/E/I/J/L)' },
-            { m: 88, home: '2D', away: '2G' }
+        // ── BRACKET ROUNDS ──
+        // ESPN tags every game with its knockout round via `event.season.slug` and fills in
+        // the resolved teams itself (it does all the seeding + best-third-place math), so the
+        // bracket reads straight from the fixtures — no calculation on our side. A slot that
+        // isn't decided yet arrives as a placeholder name (e.g. "Group L Winner",
+        // "Third Place Group E/H/I/J/K", "Round of 32 1 Winner"). Ordered first → last.
+        const KO_ROUNDS = [
+            { slug: 'round-of-32', label: 'Round of 32' },
+            { slug: 'round-of-16', label: 'Round of 16' },
+            { slug: 'quarterfinals', label: 'Quarter-finals' },
+            { slug: 'semifinals', label: 'Semi-finals' },
+            { slug: '3rd-place-match', label: '3rd Place' },
+            { slug: 'final', label: 'Final' }
         ];
-        const BRACKET_R16 = [
-            { m: 89, from: [74, 77] },
-            { m: 90, from: [73, 75] },
-            { m: 91, from: [76, 78] },
-            { m: 92, from: [79, 80] },
-            { m: 93, from: [83, 84] },
-            { m: 94, from: [81, 82] },
-            { m: 95, from: [86, 88] },
-            { m: 96, from: [85, 87] }
-        ];
-        const BRACKET_QF = [
-            { m: 97, from: [89, 90] },
-            { m: 98, from: [91, 92] },
-            { m: 99, from: [93, 94] },
-            { m: 100, from: [95, 96] }
-        ];
-        const BRACKET_SF = [
-            { m: 101, from: [97, 98] },
-            { m: 102, from: [99, 100] }
-        ];
-        const BRACKET_FINAL = { m: 104, from: [101, 102] };
-        const BRACKET_THIRD = { m: 103, from: [101, 102] };  // losers
 
         // ── STATE ──
         const TZ = 'America/Chicago';   // Display all dates in Central time
@@ -1183,7 +1156,8 @@
         function tagClass(o) { return OWNERS[o] ? 'tag-' + OWNERS[o].color : ''; }
 
         // ── DATA FETCH ──
-        const ESPN_SCOREBOARD = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719';
+        // limit=300 lifts ESPN's default 100-event cap so all 104 matches (incl. SF/Final) load.
+        const ESPN_SCOREBOARD = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=300';
         const POLY_WC_EVENT = 'https://gamma-api.polymarket.com/events?slug=world-cup-winner';
         const POLY_BOOT_EVENT = 'https://gamma-api.polymarket.com/events?slug=world-cup-golden-boot-winner';
 
@@ -1259,6 +1233,7 @@
                         awayOwner: teamOwner(awayName),
                         statusState: status.state || 'pre',
                         statusDetail: status.shortDetail || status.detail || '',
+                        round: (ev.season && ev.season.slug) || '',
                         venue: (comp.venue && comp.venue.fullName) || '',
                         venueCity: (comp.venue && comp.venue.address && comp.venue.address.city) || '',
                         odds: comp.odds || [],
@@ -1671,61 +1646,53 @@
             }).join('');
         }
 
-        // ── RENDER: BRACKET (filled with official 2026 placeholder seedings) ──
-        function bracketSide(label) {
-            // label is either a placeholder like "1A" / "2C" / "3(A/B/C/D/F)"
-            // or could later be a real team name once filled in
-            return `<div class="bracket-match-row tbd">${label}</div>`;
+        // ── RENDER: BRACKET (read straight from ESPN's per-round fixtures) ──
+        // A side is a placeholder (slot not decided yet) when ESPN sends one of its slot
+        // descriptions rather than a country.
+        function isBracketPlaceholder(name) {
+            return /\b(Winner|Loser|2nd Place|Third Place|Round of)\b/i.test(name || '');
+        }
+        function prettyPlaceholder(name) {
+            return (name || 'TBD')
+                .replace(/^Group\s+([A-L])\s+Winner$/i, 'Winner Grp $1')
+                .replace(/^Group\s+([A-L])\s+2nd Place$/i, '2nd Grp $1')
+                .replace(/^Third Place Group\s+/i, '3rd: ')
+                .replace(/^Round of 32\s+(\d+)\s+Winner$/i, 'Win R32-$1')
+                .replace(/^Round of 16\s+(\d+)\s+Winner$/i, 'Win R16-$1')
+                .replace(/^Quarterfinal\s+(\d+)\s+Winner$/i, 'Win QF-$1')
+                .replace(/^Semifinal\s+(\d+)\s+Winner$/i, 'Win SF-$1')
+                .replace(/^Semifinal\s+(\d+)\s+Loser$/i, 'Lose SF-$1');
+        }
+        function bracketSideHtml(name) {
+            if (isBracketPlaceholder(name)) {
+                return `<div class="bracket-match-row tbd">${prettyPlaceholder(name)}</div>`;
+            }
+            const out = eliminatedTeams.has(normalizeTeam(name)) ? 'team-eliminated' : '';
+            return `<div class="bracket-match-row ${out}">${displayTeam(name)}${teamTagHtml(name)}</div>`;
         }
 
         function renderBracket() {
             const el = document.getElementById('bracket-view');
-            const r32 = BRACKET_R32.map(m => `
-                <div class="bracket-match">
-                    <div class="bracket-match-num">M${m.m}</div>
-                    ${bracketSide(m.home)}
-                    ${bracketSide(m.away)}
-                </div>`).join('');
-            const buildFromRound = (round) => round.map(m => `
-                <div class="bracket-match">
-                    <div class="bracket-match-num">M${m.m}</div>
-                    ${bracketSide('Winner M' + m.from[0])}
-                    ${bracketSide('Winner M' + m.from[1])}
-                </div>`).join('');
-            const r16 = buildFromRound(BRACKET_R16);
-            const qf  = buildFromRound(BRACKET_QF);
-            const sf  = buildFromRound(BRACKET_SF);
-            const fnl = `
-                <div class="bracket-match">
-                    <div class="bracket-match-num">M${BRACKET_FINAL.m}</div>
-                    ${bracketSide('Winner M' + BRACKET_FINAL.from[0])}
-                    ${bracketSide('Winner M' + BRACKET_FINAL.from[1])}
-                </div>`;
-            el.innerHTML = `
-                <div class="bracket-wrapper">
-                    <div class="bracket-rounds">
-                        <div class="bracket-round">
-                            <div class="bracket-round-label">Round of 32</div>
-                            ${r32}
-                        </div>
-                        <div class="bracket-round">
-                            <div class="bracket-round-label">Round of 16</div>
-                            ${r16}
-                        </div>
-                        <div class="bracket-round">
-                            <div class="bracket-round-label">Quarter-finals</div>
-                            ${qf}
-                        </div>
-                        <div class="bracket-round">
-                            <div class="bracket-round-label">Semi-finals</div>
-                            ${sf}
-                        </div>
-                        <div class="bracket-round">
-                            <div class="bracket-round-label">Final</div>
-                            ${fnl}
-                        </div>
-                    </div>
-                </div>`;
+            const columns = KO_ROUNDS.map(r => {
+                const games = fixtures
+                    .filter(f => f.round === r.slug)
+                    .sort((a, b) => (a.date || '').localeCompare(b.date || '') || String(a.id).localeCompare(String(b.id)));
+                if (!games.length) return '';
+                const boxes = games.map(f => `
+                    <div class="bracket-match" onclick='showMatch(${JSON.stringify(f.id)})'>
+                        <div class="bracket-match-num">${f.date ? fmtDateCT(f.date, { month: 'short', day: 'numeric' }) : ''}</div>
+                        ${bracketSideHtml(f.homeName)}
+                        ${bracketSideHtml(f.awayName)}
+                    </div>`).join('');
+                return `
+                    <div class="bracket-round">
+                        <div class="bracket-round-label">${r.label}</div>
+                        ${boxes}
+                    </div>`;
+            }).join('');
+            el.innerHTML = columns
+                ? `<div class="bracket-wrapper"><div class="bracket-rounds">${columns}</div></div>`
+                : '<div class="empty-msg">Bracket fills in as the group stage finishes.</div>';
         }
 
         // ── MODALS ──
