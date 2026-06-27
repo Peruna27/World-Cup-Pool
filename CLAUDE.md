@@ -116,7 +116,7 @@ Single-page app, mobile-first:
 4. **Tabs**: Fixtures · Groups · Bracket
    - **Fixtures**: all 104 games grouped by date, click any row to open match details. Pool teams get color tags.
    - **Groups**: 12 group tables, top 2 highlighted (advance directly to R32).
-   - **Bracket**: R32 → Final, rendered straight from ESPN's per-round fixtures (`season.slug`). Each slot shows the resolved team (with owner tag) once ESPN locks it, otherwise ESPN's placeholder label. Each match box is clickable. No bracket math on our side.
+   - **Bracket**: connected R32 → Final tree with elbow connector lines, rendered from ESPN's per-round fixtures (`season.slug`). Each slot shows the resolved team (with owner tag) once ESPN locks it, otherwise ESPN's placeholder label; each box is clickable. Teams come 100% from ESPN — the only fixed data is `KO_TREE`, the immutable "winner of game X → game Y" wiring (games numbered 1..N in fixture date order, validated against ESPN's `"Round of 32 N Winner"` labels). `KO_ORDER` re-stacks each round (in-order tree walk) so a game's two feeders sit directly above/below it, which is what makes the connectors line up; the connectors themselves are pure CSS (`.bracket-slot::before/::after`, sized to the column gap). The 3rd-place match renders separately, outside the tree.
 5. **Match modal** — tap a fixture row for score, time, venue, owner tags, and per-game odds.
 
 ---

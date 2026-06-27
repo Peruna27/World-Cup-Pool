@@ -577,20 +577,20 @@
 
         /* ── Bracket ── */
         .bracket-wrapper {
-            padding: 14px;
+            padding: 14px 14px 20px;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
         .bracket-rounds {
             display: flex;
-            gap: 14px;
+            gap: 22px;                 /* MUST equal the connector stub width below */
             min-width: max-content;
+            align-items: stretch;
         }
         .bracket-round {
             display: flex;
             flex-direction: column;
-            justify-content: space-around;
-            min-width: 140px;
+            min-width: 128px;
         }
         .bracket-round-label {
             font-family: 'DM Sans', sans-serif;
@@ -600,18 +600,51 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             text-align: center;
-            margin-bottom: 6px;
+            height: 12px;              /* equal across rounds so the columns line up */
+            margin-bottom: 8px;
+        }
+        .bracket-col-body {            /* holds the evenly-distributed match slots */
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .bracket-slot {
+            flex: 1 1 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            min-height: 48px;
         }
         .bracket-match {
+            width: 100%;
             border: 1px solid var(--border-light);
             border-radius: 4px;
-            font-size: 11px;
-            margin: 4px 0;
             background: #fff;
             cursor: pointer;
             position: relative;
         }
         .bracket-match:active { background: var(--cream-light); }
+        /* connector — horizontal stub out the RIGHT of every slot that has a next round */
+        .bracket-round:not(:last-child) .bracket-slot::after {
+            content: '';
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            margin-top: -1px;
+            width: 22px;               /* spans the column gap to reach the next round */
+            border-top: 2px solid var(--border);
+        }
+        /* connector — vertical line on the LEFT of every slot after the first round; its top
+           (25%) and bottom (75%) meet the two feeder stubs that land there */
+        .bracket-round:not(:first-child) .bracket-slot::before {
+            content: '';
+            position: absolute;
+            right: 100%;
+            top: 25%;
+            height: 50%;
+            border-left: 2px solid var(--border);
+        }
         .bracket-match-num {
             position: absolute;
             top: -7px;
@@ -623,6 +656,7 @@
             background: #fff;
             padding: 0 4px;
             letter-spacing: 0.5px;
+            z-index: 1;
         }
         .bracket-match-row {
             display: flex;
@@ -638,6 +672,9 @@
             border-top: 1px solid var(--border-light);
         }
         .bracket-match-row.tbd { color: var(--text-light); font-style: italic; font-size: 10px; }
+        /* 3rd-place match — sits outside the knockout tree */
+        .bracket-third { margin: 18px 14px 4px; max-width: 230px; }
+        .bracket-third .bracket-round-label { text-align: left; height: auto; margin-bottom: 6px; }
 
         /* ── Top scorers (Goals view) ── */
         .scorer-row {
@@ -1093,14 +1130,44 @@
         // bracket reads straight from the fixtures — no calculation on our side. A slot that
         // isn't decided yet arrives as a placeholder name (e.g. "Group L Winner",
         // "Third Place Group E/H/I/J/K", "Round of 32 1 Winner"). Ordered first → last.
+        // The 3rd-place match sits outside the tree and is rendered on its own.
         const KO_ROUNDS = [
             { slug: 'round-of-32', label: 'Round of 32' },
             { slug: 'round-of-16', label: 'Round of 16' },
             { slug: 'quarterfinals', label: 'Quarter-finals' },
             { slug: 'semifinals', label: 'Semi-finals' },
-            { slug: '3rd-place-match', label: '3rd Place' },
             { slug: 'final', label: 'Final' }
         ];
+
+        // Fixed bracket wiring (FIFA 2026), by game number within each round — games are
+        // numbered in the fixture date order ESPN returns (game 1 = earliest). Each entry is
+        // the two prior-round game numbers whose winners meet here. This is only the immutable
+        // "winner of game X advances to game Y" shape (confirmed against ESPN's own
+        // "Round of 32 N Winner" labels); every team name still comes straight from ESPN. It's
+        // what lets us draw the connector lines.
+        const KO_TREE = {
+            'round-of-16':   [[1,3],[2,5],[4,6],[7,8],[11,12],[9,10],[14,16],[13,15]],
+            'quarterfinals': [[1,2],[5,6],[3,4],[7,8]],
+            'semifinals':    [[1,2],[3,4]],
+            'final':         [[1,2]]
+        };
+        const KO_PRIOR = { 'round-of-16': 'round-of-32', 'quarterfinals': 'round-of-16', 'semifinals': 'quarterfinals', 'final': 'semifinals' };
+
+        // Vertical display order (top → bottom) per round so each game's two feeders sit
+        // directly above/below the game they feed — which is what makes the elbow connectors
+        // line up. Derived once from KO_TREE via an in-order walk of the tree.
+        const KO_ORDER = (() => {
+            const leaves = (round, num) => round === 'round-of-32' ? [num]
+                : KO_TREE[round][num - 1].reduce((acc, n) => acc.concat(leaves(KO_PRIOR[round], n)), []);
+            const leafOrder = leaves('final', 1);
+            const pos = {}; leafOrder.forEach((n, i) => pos[n] = i);
+            const order = { 'round-of-32': leafOrder };
+            for (const round of Object.keys(KO_TREE)) {
+                order[round] = KO_TREE[round].map((_, i) => i + 1)
+                    .sort((a, b) => Math.min(...leaves(round, a).map(n => pos[n])) - Math.min(...leaves(round, b).map(n => pos[n])));
+            }
+            return order;
+        })();
 
         // ── STATE ──
         const TZ = 'America/Chicago';   // Display all dates in Central time
@@ -1671,27 +1738,43 @@
             return `<div class="bracket-match-row ${out}">${displayTeam(name)}${teamTagHtml(name)}</div>`;
         }
 
+        function bracketMatchBox(f) {
+            return `
+                <div class="bracket-match" onclick='showMatch(${JSON.stringify(f.id)})'>
+                    <div class="bracket-match-num">${f.date ? fmtDateCT(f.date, { month: 'short', day: 'numeric' }) : ''}</div>
+                    ${bracketSideHtml(f.homeName)}
+                    ${bracketSideHtml(f.awayName)}
+                </div>`;
+        }
         function renderBracket() {
             const el = document.getElementById('bracket-view');
+            // ESPN returns each round's games in date order → that's game number 1..N. KO_ORDER
+            // re-stacks them so each game's two feeders sit directly above/below it, which is
+            // what lets the connector lines join the right boxes.
+            const sortByDate = list => list.slice().sort((a, b) =>
+                (a.date || '').localeCompare(b.date || '') || String(a.id).localeCompare(String(b.id)));
             const columns = KO_ROUNDS.map(r => {
-                const games = fixtures
-                    .filter(f => f.round === r.slug)
-                    .sort((a, b) => (a.date || '').localeCompare(b.date || '') || String(a.id).localeCompare(String(b.id)));
+                const games = sortByDate(fixtures.filter(f => f.round === r.slug));
                 if (!games.length) return '';
-                const boxes = games.map(f => `
-                    <div class="bracket-match" onclick='showMatch(${JSON.stringify(f.id)})'>
-                        <div class="bracket-match-num">${f.date ? fmtDateCT(f.date, { month: 'short', day: 'numeric' }) : ''}</div>
-                        ${bracketSideHtml(f.homeName)}
-                        ${bracketSideHtml(f.awayName)}
-                    </div>`).join('');
+                const order = KO_ORDER[r.slug] || games.map((_, i) => i + 1);
+                const slots = order.map(n => {
+                    const f = games[n - 1];
+                    return `<div class="bracket-slot">${f ? bracketMatchBox(f) : ''}</div>`;
+                }).join('');
                 return `
                     <div class="bracket-round">
                         <div class="bracket-round-label">${r.label}</div>
-                        ${boxes}
+                        <div class="bracket-col-body">${slots}</div>
                     </div>`;
             }).join('');
+            const third = sortByDate(fixtures.filter(f => f.round === '3rd-place-match'))[0];
+            const thirdHtml = third ? `
+                <div class="bracket-third">
+                    <div class="bracket-round-label">3rd Place Play-off</div>
+                    ${bracketMatchBox(third)}
+                </div>` : '';
             el.innerHTML = columns
-                ? `<div class="bracket-wrapper"><div class="bracket-rounds">${columns}</div></div>`
+                ? `<div class="bracket-wrapper"><div class="bracket-rounds">${columns}</div></div>${thirdHtml}`
                 : '<div class="empty-msg">Bracket fills in as the group stage finishes.</div>';
         }
 
