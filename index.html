@@ -1121,11 +1121,11 @@
         };
 
         // ── BRACKET ROUNDS ──
-        // ESPN tags every game with its knockout round via `event.season.slug` and fills in
-        // the resolved teams itself (it does all the seeding + best-third-place math), so the
-        // bracket reads straight from the fixtures — no calculation on our side. A slot that
-        // isn't decided yet arrives as a placeholder name (e.g. "Group L Winner",
-        // "Third Place Group E/H/I/J/K", "Round of 32 1 Winner"). Ordered first → last.
+        // ESPN tags every game with its knockout round via `event.season.slug` and fills in the
+        // resolved teams itself (all the seeding + best-third-place math). A slot that isn't
+        // decided yet arrives as a placeholder name (e.g. "Group L Winner", "Third Place Group
+        // E/H/I/J/K", "Round of 32 1 Winner"). We position the games per the official bracket
+        // (see BRACKET_R32_SLOTS / KO_FEED below) — NOT by date. Ordered first → last.
         // The 3rd-place match sits outside the tree and is rendered on its own.
         const KO_ROUNDS = [
             { slug: 'round-of-32', label: 'Round of 32' },
@@ -1135,14 +1135,28 @@
             { slug: 'final', label: 'Final' }
         ];
 
-        // Fixed bracket wiring (FIFA 2026), by game number within each round — games are
-        // numbered in the fixture date order ESPN returns (game 1 = earliest). Each entry is
-        // the two prior-round game numbers whose winners meet here. This is only the immutable
-        // "winner of game X advances to game Y" shape (confirmed against ESPN's own
-        // "Round of 32 N Winner" labels); every team name still comes straight from ESPN. It's
-        // what lets us draw the connector lines.
-        const KO_TREE = {
-            'round-of-16':   [[1,3],[2,5],[4,6],[7,8],[11,12],[9,10],[14,16],[13,15]],
+        // The OFFICIAL FIFA bracket shape. ESPN gives us the teams (and does all the seeding /
+        // best-third-place math), but its scoreboard never says which game feeds which, and —
+        // critically — its "Round of 32 N Winner" labels number games by the official MATCH
+        // order (M73 = R32 game 1, M74 = game 2 …), NOT by calendar date. Mapping by date
+        // scrambles the bracket, so we pin every fixture to its official position and wire the
+        // tree ourselves. Team names still come 100% from ESPN.
+
+        // R32 slot pairs in official order (M73..M88). Each ESPN R32 fixture is matched to one
+        // of these by its group winner / runner-up side ('1D' = winner of Group D, '2B' =
+        // runner-up of Group B, '3' = a third-placed team). This slot layout is the published
+        // bracket — it doesn't depend on results.
+        const BRACKET_R32_SLOTS = [
+            ['2A','2B'], ['1E','3'],  ['1F','2C'], ['1C','2F'],
+            ['1I','3'],  ['2E','2I'], ['1A','3'],  ['1L','3'],
+            ['1D','3'],  ['1G','3'],  ['2K','2L'], ['1H','2J'],
+            ['1B','3'],  ['1J','2H'], ['1K','3'],  ['2D','2G']
+        ];
+        // Feeders by official position: game N of a round is fed by these prior-round positions.
+        // (Verified against the published 2026 bracket — note the QF crossover: QF2 takes R16
+        // games 5&6, QF3 takes 3&4. FIFA arranges the paths so e.g. 1D and 1I meet in the semis.)
+        const KO_FEED = {
+            'round-of-16':   [[2,5],[1,3],[4,6],[7,8],[11,12],[9,10],[14,16],[13,15]],
             'quarterfinals': [[1,2],[5,6],[3,4],[7,8]],
             'semifinals':    [[1,2],[3,4]],
             'final':         [[1,2]]
@@ -1150,16 +1164,15 @@
         const KO_PRIOR = { 'round-of-16': 'round-of-32', 'quarterfinals': 'round-of-16', 'semifinals': 'quarterfinals', 'final': 'semifinals' };
 
         // Vertical display order (top → bottom) per round so each game's two feeders sit
-        // directly above/below the game they feed — which is what makes the elbow connectors
-        // line up. Derived once from KO_TREE via an in-order walk of the tree.
+        // directly above/below the game they feed — what makes the elbow connectors line up.
         const KO_ORDER = (() => {
             const leaves = (round, num) => round === 'round-of-32' ? [num]
-                : KO_TREE[round][num - 1].reduce((acc, n) => acc.concat(leaves(KO_PRIOR[round], n)), []);
+                : KO_FEED[round][num - 1].reduce((acc, n) => acc.concat(leaves(KO_PRIOR[round], n)), []);
             const leafOrder = leaves('final', 1);
             const pos = {}; leafOrder.forEach((n, i) => pos[n] = i);
             const order = { 'round-of-32': leafOrder };
-            for (const round of Object.keys(KO_TREE)) {
-                order[round] = KO_TREE[round].map((_, i) => i + 1)
+            for (const round of Object.keys(KO_FEED)) {
+                order[round] = KO_FEED[round].map((_, i) => i + 1)
                     .sort((a, b) => Math.min(...leaves(round, a).map(n => pos[n])) - Math.min(...leaves(round, b).map(n => pos[n])));
             }
             return order;
@@ -1741,19 +1754,58 @@
                     ${bracketSideHtml(f.awayName)}
                 </div>`;
         }
+        // A knockout side's group slot: '1A'/'2B' (group winner/runner-up), '3' (a third-placed
+        // team — group not pinned), or its resolved team's standing if ESPN already filled it in.
+        function bracketSlot(name, groupPos) {
+            let m;
+            if (m = name.match(/Group ([A-L]) Winner/i)) return '1' + m[1].toUpperCase();
+            if (m = name.match(/Group ([A-L]) 2nd Place/i)) return '2' + m[1].toUpperCase();
+            if (/Third Place/i.test(name)) return '3';
+            const g = groupPos[normalizeTeam(name)];
+            return g ? (g.pos + 1) + g.letter : null;
+        }
+        // The prior-round game number a placeholder side feeds from ("Round of 32 5 Winner" → 5).
+        function bracketFeedRef(name) {
+            const m = name.match(/Round of 32 (\d+)|Round of 16 (\d+)|Quarterfinal (\d+)|Semifinal (\d+)/i);
+            return m ? +(m[1] || m[2] || m[3] || m[4]) : null;
+        }
+        // Pin each ESPN fixture of a round to its official position (index 0 = position 1).
+        function bracketFixturesByPosition(roundSlug, groupPos) {
+            const games = fixtures.filter(f => f.round === roundSlug);
+            const out = new Array(roundSlug === 'round-of-32' ? 16 : KO_FEED[roundSlug].length).fill(null);
+            if (roundSlug === 'round-of-32') {
+                // match each fixture to a slot pair by its group winner/runner-up anchor
+                const anchor = {};
+                for (const f of games) for (const nm of [f.homeName, f.awayName]) {
+                    const s = bracketSlot(nm, groupPos);
+                    if (s && /^[12][A-L]$/.test(s)) anchor[s] = f;
+                }
+                BRACKET_R32_SLOTS.forEach((pair, i) => {
+                    const a = pair.find(s => /^[12][A-L]$/.test(s));
+                    out[i] = anchor[a] || null;
+                });
+            } else {
+                const feeds = KO_FEED[roundSlug].map(s => s.slice().sort((a, b) => a - b).join());
+                for (const f of games) {
+                    const set = [bracketFeedRef(f.homeName), bracketFeedRef(f.awayName)].sort((a, b) => a - b).join();
+                    const i = feeds.indexOf(set);
+                    if (i >= 0) out[i] = f;
+                }
+            }
+            return out;
+        }
         function renderBracket() {
             const el = document.getElementById('bracket-view');
-            // ESPN returns each round's games in date order → that's game number 1..N. KO_ORDER
-            // re-stacks them so each game's two feeders sit directly above/below it, which is
-            // what lets the connector lines join the right boxes.
-            const sortByDate = list => list.slice().sort((a, b) =>
-                (a.date || '').localeCompare(b.date || '') || String(a.id).localeCompare(String(b.id)));
+            // Pin each fixture to its OFFICIAL position (not date order), then KO_ORDER re-stacks
+            // each round so a game's two feeders sit directly above/below it for the connectors.
+            const groups = deriveGroups();
+            const groupPos = {};
+            for (const g of groups) g.teams.forEach((t, i) => groupPos[normalizeTeam(t.name)] = { letter: g.letter, pos: i });
             const columns = KO_ROUNDS.map(r => {
-                const games = sortByDate(fixtures.filter(f => f.round === r.slug));
-                if (!games.length) return '';
-                const order = KO_ORDER[r.slug] || games.map((_, i) => i + 1);
-                const slots = order.map(n => {
-                    const f = games[n - 1];
+                const byPos = bracketFixturesByPosition(r.slug, groupPos);
+                if (!byPos.some(Boolean)) return '';
+                const slots = KO_ORDER[r.slug].map(n => {
+                    const f = byPos[n - 1];
                     return `<div class="bracket-slot">${f ? bracketMatchBox(f) : ''}</div>`;
                 }).join('');
                 return `
@@ -1762,7 +1814,7 @@
                         <div class="bracket-col-body">${slots}</div>
                     </div>`;
             }).join('');
-            const third = sortByDate(fixtures.filter(f => f.round === '3rd-place-match'))[0];
+            const third = fixtures.filter(f => f.round === '3rd-place-match')[0];
             const thirdHtml = third ? `
                 <div class="bracket-third">
                     <div class="bracket-round-label">3rd Place Play-off</div>
