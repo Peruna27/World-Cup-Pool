@@ -676,6 +676,22 @@
             min-width: 0;          /* long names wrap to a 2nd line instead of truncating */
         }
         .bracket-match-row .fixture-team-tag { flex-shrink: 0; }
+        .bracket-match-row .bt-score {
+            flex-shrink: 0;
+            margin-left: 5px;
+            min-width: 11px;
+            text-align: right;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 800;
+            font-size: 11px;
+            color: var(--text-mid);
+        }
+        .bracket-match-row.bt-won { background: rgba(39,174,96,0.10); }
+        .bracket-match-row.bt-won .bt-name,
+        .bracket-match-row.bt-won .bt-score { color: #1e7a44; }
+        .bracket-match-row.bt-lost { opacity: 0.5; }
+        .bracket-match-row.bt-lost .bt-name { text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.3); }
+        .bracket-match.bracket-live { border-color: var(--brand-gold); box-shadow: 0 0 0 1px var(--brand-gold); }
         .bracket-match-row + .bracket-match-row {
             border-top: 1px solid var(--border-light);
         }
@@ -1175,11 +1191,16 @@
         };
         const KO_PRIOR = { 'round-of-16': 'round-of-32', 'quarterfinals': 'round-of-16', 'semifinals': 'quarterfinals', 'final': 'semifinals' };
 
+        // The R32 positions (1..16) that sit under a given game — its slice of the tree.
+        function bracketLeaves(round, num) {
+            return round === 'round-of-32' ? [num]
+                : KO_FEED[round][num - 1].reduce((acc, n) => acc.concat(bracketLeaves(KO_PRIOR[round], n)), []);
+        }
+
         // Vertical display order (top → bottom) per round so each game's two feeders sit
         // directly above/below the game they feed — what makes the elbow connectors line up.
         const KO_ORDER = (() => {
-            const leaves = (round, num) => round === 'round-of-32' ? [num]
-                : KO_FEED[round][num - 1].reduce((acc, n) => acc.concat(leaves(KO_PRIOR[round], n)), []);
+            const leaves = bracketLeaves;
             const leafOrder = leaves('final', 1);
             const pos = {}; leafOrder.forEach((n, i) => pos[n] = i);
             const order = { 'round-of-32': leafOrder };
@@ -1317,6 +1338,8 @@
                         homeName, awayName,
                         homeScore: home.score != null ? String(home.score) : '',
                         awayScore: away.score != null ? String(away.score) : '',
+                        homeWin: home.winner === true,
+                        awayWin: away.winner === true,
                         homeOwner: teamOwner(homeName),
                         awayOwner: teamOwner(awayName),
                         statusState: status.state || 'pre',
@@ -1681,12 +1704,15 @@
             for (const g of groups) {
                 for (const t of g.teams) teamRowByNorm[normalizeTeam(t.name)] = t;
             }
-            // Tally completed fixtures
+            // Tally completed GROUP-STAGE fixtures only. (Knockout games are also between two
+            // teams that each belong to a group, so without the round check a result like
+            // "South Africa 0-1 Canada" in the R32 would wrongly count toward group standings.)
             for (const f of fixtures) {
                 if (f.statusState !== 'post') continue;
+                if (f.round && f.round !== 'group-stage') continue;
                 const home = teamRowByNorm[normalizeTeam(f.homeName)];
                 const away = teamRowByNorm[normalizeTeam(f.awayName)];
-                if (!home || !away) continue;  // not a group-stage match (knockout)
+                if (!home || !away) continue;  // a name didn't match a group row
                 const hs = parseInt(f.homeScore) || 0;
                 const as = parseInt(f.awayScore) || 0;
                 home.gp++; away.gp++;
@@ -1752,19 +1778,24 @@
                 .replace(/^Semifinal\s+(\d+)\s+Winner$/i, 'Win SF-$1')
                 .replace(/^Semifinal\s+(\d+)\s+Loser$/i, 'Lose SF-$1');
         }
-        function bracketSideHtml(name) {
+        function bracketSideHtml(name, res) {
             if (isBracketPlaceholder(name)) {
                 return `<div class="bracket-match-row tbd"><span class="bt-name">${prettyPlaceholder(name)}</span></div>`;
             }
-            const out = eliminatedTeams.has(normalizeTeam(name)) ? 'team-eliminated' : '';
-            return `<div class="bracket-match-row ${out}"><span class="bt-name">${displayTeam(name)}</span>${teamTagHtml(name)}</div>`;
+            const elim = !res && eliminatedTeams.has(normalizeTeam(name)) ? 'team-eliminated' : '';
+            const cls = res && res.won ? 'bt-won' : (res && res.lost ? 'bt-lost' : '');
+            const score = res && res.score != null && res.score !== '' ? `<span class="bt-score">${res.score}</span>` : '';
+            return `<div class="bracket-match-row ${elim} ${cls}"><span class="bt-name">${displayTeam(name)}</span>${teamTagHtml(name)}${score}</div>`;
         }
 
         function bracketMatchBox(f) {
+            const post = f.statusState === 'post', live = f.statusState === 'in';
+            // Winner/loser styling only once final (ESPN's `winner` flag is shootout-safe).
+            const side = (score, win) => (post || live) ? { score, won: post && win, lost: post && !win } : null;
             return `
-                <div class="bracket-match" onclick='showMatch(${JSON.stringify(f.id)})'>
-                    ${bracketSideHtml(f.homeName)}
-                    ${bracketSideHtml(f.awayName)}
+                <div class="bracket-match${live ? ' bracket-live' : ''}" onclick='showMatch(${JSON.stringify(f.id)})'>
+                    ${bracketSideHtml(f.homeName, side(f.homeScore, f.homeWin))}
+                    ${bracketSideHtml(f.awayName, side(f.awayScore, f.awayWin))}
                 </div>`;
         }
         // A knockout side's group slot: '1A'/'2B' (group winner/runner-up), '3' (a third-placed
@@ -1783,7 +1814,7 @@
             return m ? +(m[1] || m[2] || m[3] || m[4]) : null;
         }
         // Pin each ESPN fixture of a round to its official position (index 0 = position 1).
-        function bracketFixturesByPosition(roundSlug, groupPos) {
+        function bracketFixturesByPosition(roundSlug, groupPos, r32PosByTeam) {
             const games = fixtures.filter(f => f.round === roundSlug);
             const out = new Array(roundSlug === 'round-of-32' ? 16 : KO_FEED[roundSlug].length).fill(null);
             if (roundSlug === 'round-of-32') {
@@ -1798,11 +1829,20 @@
                     out[i] = anchor[a] || null;
                 });
             } else {
-                const feeds = KO_FEED[roundSlug].map(s => s.slice().sort((a, b) => a - b).join());
+                const prior = KO_PRIOR[roundSlug];
                 for (const f of games) {
-                    const set = [bracketFeedRef(f.homeName), bracketFeedRef(f.awayName)].sort((a, b) => a - b).join();
-                    const i = feeds.indexOf(set);
-                    if (i >= 0) out[i] = f;
+                    // Identify any R32 leaf positions this game covers — from a placeholder feeder
+                    // ref ("Round of 32 5 Winner") OR, once ESPN advances a team into the slot,
+                    // from that team mapped back to the R32 game it won. Either pins the position.
+                    const known = [];
+                    for (const side of [f.homeName, f.awayName]) {
+                        const ref = bracketFeedRef(side);
+                        if (ref) known.push(...bracketLeaves(prior, ref));
+                        else { const rp = r32PosByTeam[normalizeTeam(side)]; if (rp != null) known.push(rp); }
+                    }
+                    for (let i = 0; i < out.length; i++) {
+                        if (bracketLeaves(roundSlug, i + 1).some(l => known.includes(l))) { out[i] = f; break; }
+                    }
                 }
             }
             return out;
@@ -1814,8 +1854,13 @@
             const groups = deriveGroups();
             const groupPos = {};
             for (const g of groups) g.teams.forEach((t, i) => groupPos[normalizeTeam(t.name)] = { letter: g.letter, pos: i });
+            // Resolve R32 first, then map every advanced team back to its R32 position so later
+            // rounds can be placed even after ESPN swaps a placeholder for the real team.
+            const r32ByPos = bracketFixturesByPosition('round-of-32', groupPos, {});
+            const r32PosByTeam = {};
+            r32ByPos.forEach((f, i) => { if (f) for (const nm of [f.homeName, f.awayName]) if (!isBracketPlaceholder(nm)) r32PosByTeam[normalizeTeam(nm)] = i + 1; });
             const columns = KO_ROUNDS.map(r => {
-                const byPos = bracketFixturesByPosition(r.slug, groupPos);
+                const byPos = r.slug === 'round-of-32' ? r32ByPos : bracketFixturesByPosition(r.slug, groupPos, r32PosByTeam);
                 if (!byPos.some(Boolean)) return '';
                 const slots = KO_ORDER[r.slug].map(n => {
                     const f = byPos[n - 1];
