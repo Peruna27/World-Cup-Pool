@@ -394,6 +394,18 @@
         .sub-panel.active { display: block; }
 
         /* ── Fixtures ── */
+        .tz-note {
+            padding: 7px 14px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-mid);
+            background: var(--cream-light);
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
         .fixture-date-group { border-bottom: 1px solid var(--border-light); }
         .fixture-date-header {
             background: var(--cream-light);
@@ -1618,7 +1630,8 @@
                 byDate[d].push(f);
             }
             const dates = Object.keys(byDate).sort();
-            el.innerHTML = dates.map(d => {
+            const tzNote = dates.length ? '<div class="tz-note">All kickoff times are Central Time (CT)</div>' : '';
+            el.innerHTML = tzNote + dates.map(d => {
                 const dateLabel = d === 'TBD' ? 'TBD' :
                     fmtDateCT(d + 'T18:00:00Z', { weekday: 'short', month: 'short', day: 'numeric' });
                 const rows = byDate[d].map(f => {
@@ -1902,7 +1915,7 @@
                 return `
                     <div class="match-info-row">
                         <div class="match-info-label">${dateStr} &middot; ${oppHome ? 'vs' : '@'} ${displayTeam(opp)}</div>
-                        <div class="match-info-value">${showScore ? (teamScore||0) + '–' + (oppScore||0) + ' ' + result : (f.statusDetail || fmtTimeCT(f.date))}</div>
+                        <div class="match-info-value">${showScore ? (teamScore||0) + '–' + (oppScore||0) + ' ' + result : (f.statusDetail || (fmtTimeCT(f.date) + ' CT'))}</div>
                     </div>`;
             }).join('');
 
